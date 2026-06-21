@@ -7,7 +7,7 @@ services:
 
   nginx-mailcow:
     expose:
-      - 443
+      - 8443
     labels:
       - traefik.enable=true
       - traefik.docker.network=azteas-net
@@ -33,7 +33,7 @@ services:
       - traefik.http.routers.mailcow-autodiscover.service=mailcow-svc
 
       # Connexion HTTPS vers nginx-mailcow (port 443 interne, certificat snake-oil accepté)
-      - traefik.http.services.mailcow-svc.loadbalancer.server.port=443
+      - traefik.http.services.mailcow-svc.loadbalancer.server.port=8443
       - traefik.http.services.mailcow-svc.loadbalancer.server.scheme=https
       - traefik.http.services.mailcow-svc.loadbalancer.serversTransport=insecure-skip-verify@file
 
