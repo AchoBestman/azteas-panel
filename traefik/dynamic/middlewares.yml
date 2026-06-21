@@ -1,0 +1,34 @@
+# Middlewares globaux réutilisables par tous les services
+
+http:
+  middlewares:
+
+    # Authentification HTTP basique (dashboard Traefik, interfaces admin)
+    auth-basic:
+      basicAuth:
+        usersFile: /etc/traefik/dynamic/.htpasswd
+
+    # Headers de sécurité appliqués à toutes les routes publiques
+    secure-headers:
+      headers:
+        sslRedirect: true
+        forceSTSHeader: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        frameDeny: true
+
+    # Rate limiting usage général (50 req/s, pic 20)
+    rate-limit:
+      rateLimit:
+        average: 50
+        burst: 20
+
+    # Rate limiting strict pour interfaces admin (pgAdmin, phpMyAdmin, dashboard, etc. 10 req/s, pic 5)
+    rate-limit-admin:
+      rateLimit:
+        average: 10
+        burst: 5

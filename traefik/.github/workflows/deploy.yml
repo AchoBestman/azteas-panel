@@ -1,0 +1,41 @@
+name: Deploy Traefik
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "traefik/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync traefik/ vers le VPS
+        uses: burntsushi/rsync-deployments@master
+        with:
+          switches: -avz --delete --exclude='.env' --exclude='letsencrypt/' --exclude='dynamic/.htpasswd'
+          path: traefik/
+          remote_path: /opt/azteas-panel/traefik/
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_port: ${{ secrets.VPS_PORT }}
+          remote_user: ${{ secrets.VPS_USER }}
+          remote_key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Redémarrer Traefik
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/azteas-panel/traefik
+            docker compose pull
+            docker compose up -d
+            docker compose ps
