@@ -1,0 +1,5 @@
+# Transport pour backends avec certificats auto-signés (ex: nginx-mailcow)
+http:
+  serversTransports:
+    insecure-skip-verify:
+      insecureSkipVerify: true

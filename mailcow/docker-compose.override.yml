@@ -1,13 +1,13 @@
 # Ce fichier est copié dans /opt/mailcow-dockerized/ par setup.sh
-# Configuration officielle Mailcow + Traefik v3
-# Ref: https://docs.mailcow.email/post_installation/reverse-proxy/r_p-traefik3/
+# Configuration Mailcow + Traefik v3
+# Traefik se connecte à nginx-mailcow via HTTPS (port 443 interne)
+# pour éviter la boucle de redirection HTTP→HTTPS de nginx-mailcow
 
 services:
 
-  # Nginx de Mailcow : connecté à azteas-net pour que Traefik le joigne
   nginx-mailcow:
     expose:
-      - 8080
+      - 443
     labels:
       - traefik.enable=true
       - traefik.docker.network=azteas-net
@@ -32,8 +32,10 @@ services:
       - traefik.http.routers.mailcow-autodiscover.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow-autodiscover.service=mailcow-svc
 
-      # Service : port 8080 HTTP (doc officielle Mailcow + Traefik)
-      - traefik.http.services.mailcow-svc.loadbalancer.server.port=8080
+      # Connexion HTTPS vers nginx-mailcow (port 443 interne, certificat snake-oil accepté)
+      - traefik.http.services.mailcow-svc.loadbalancer.server.port=443
+      - traefik.http.services.mailcow-svc.loadbalancer.server.scheme=https
+      - traefik.http.services.mailcow-svc.loadbalancer.serversTransport=insecure-skip-verify@file
 
     networks:
       mailcow-network:
@@ -41,7 +43,6 @@ services:
           - nginx
       azteas-net:
 
-  # Certdumper : extrait les certificats Traefik vers Mailcow
   certdumper:
     image: ghcr.io/kereis/traefik-certs-dumper:latest
     container_name: mailcow_certdumper
