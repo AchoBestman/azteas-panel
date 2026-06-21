@@ -23,12 +23,6 @@ jobs:
           echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-          echo "=== Vérification clé ==="
-          ssh-keygen -lf ~/.ssh/deploy_key
-          echo "=== Lignes dans la clé ==="
-          wc -l ~/.ssh/deploy_key
-          echo "=== Test connexion SSH ==="
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no -v ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo OK" 2>&1 | tail -20
 
       - name: Sync traefik/ vers le VPS
         run: |
