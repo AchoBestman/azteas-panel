@@ -1,0 +1,11 @@
+# Secrets - ne jamais commiter
+.env
+
+# Fichiers obsoletes (remplaces par .env centralise)
+mail/mail-env.sh
+backup/restic-env.sh
+storagebox/cifs-credentials.sh
+
+# Divers
+.DS_Store
+*.log

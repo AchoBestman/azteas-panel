@@ -13,6 +13,7 @@ services:
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic:/etc/traefik/dynamic:ro
       - letsencrypt:/letsencrypt
+      - /var/log/traefik:/var/log/traefik
     labels:
       - "traefik.enable=true"
 

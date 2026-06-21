@@ -1,0 +1,63 @@
+[DEFAULT]
+destemail = ${ADMIN_EMAIL}
+sender    = ${SMTP_FROM}
+mta       = mail
+action    = %(action_mwl)s
+
+# ============================================================
+# JAIL 1 - Login web Piler
+# ============================================================
+[piler-weblogin]
+enabled   = true
+filter    = piler-weblogin
+logpath   = /var/log/traefik/access.log
+banaction = %(banaction_allports)s
+maxretry  = 3
+findtime  = 600
+bantime   = 3600
+
+# ============================================================
+# JAIL 2 - Login web Mailcow
+# ============================================================
+[mailcow-weblogin]
+enabled   = true
+filter    = mailcow-weblogin
+logpath   = /var/log/traefik/access.log
+banaction = %(banaction_allports)s
+maxretry  = 3
+findtime  = 600
+bantime   = 3600
+
+# ============================================================
+# JAIL 3 - Dashboard Traefik (auth basique)
+# ============================================================
+[traefik-auth]
+enabled   = true
+filter    = traefik-auth
+logpath   = /var/log/traefik/access.log
+banaction = %(banaction_allports)s
+maxretry  = 3
+findtime  = 600
+bantime   = 3600
+
+# ============================================================
+# JAIL 4 - SSH
+# ============================================================
+[sshd]
+enabled  = true
+port     = ${SSH_PORT},22,2222
+maxretry = 3
+findtime = 600
+bantime  = 86400
+
+# ============================================================
+# JAIL 5 - Récidivistes : banni définitivement après 2 bans
+# ============================================================
+[recidive]
+enabled   = true
+filter    = recidive
+logpath   = /var/log/fail2ban.log
+banaction = %(banaction_allports)s
+bantime   = -1
+findtime  = 86400
+maxretry  = 2

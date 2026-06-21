@@ -1,0 +1,11 @@
+[Unit]
+Description=Execute le backup Piler tous les jours
+
+[Timer]
+# Tous les jours a 3h du matin (heure creuse, peu d'activite mail)
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

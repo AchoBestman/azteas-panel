@@ -21,7 +21,13 @@ sudo mkdir -p /opt/azteas-panel
 sudo chown $USER:$USER /opt/azteas-panel
 
 # ----------------------------------------------------------
-# 2. Ajouter l'utilisateur au groupe docker
+# 2. Créer le dossier de logs Traefik (pour fail2ban)
+# ----------------------------------------------------------
+sudo mkdir -p /var/log/traefik
+sudo chmod 755 /var/log/traefik
+
+# ----------------------------------------------------------
+# 3. Ajouter l'utilisateur au groupe docker
 # ----------------------------------------------------------
 sudo usermod -aG docker $USER
 newgrp docker

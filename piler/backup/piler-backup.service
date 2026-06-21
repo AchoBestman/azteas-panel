@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup chiffre de Piler vers stockage offsite
+After=docker.service
+Requires=docker.service
+# Notifie par email en cas d'echec via msmtp (configure par mail/setup-mail.sh)
+# Le service status-email-backup@.service correspondant doit etre installe (voir backup/status-email-backup@.service)
+OnFailure=status-email-backup@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/azteas-panel/piler/backup/backup-piler.sh

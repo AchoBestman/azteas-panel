@@ -1,0 +1,106 @@
+services:
+  mysql:
+    image: mariadb:10.11
+    container_name: piler_mysql
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - dac_override
+      - setuid
+      - setgid
+    environment:
+      - MYSQL_DATABASE=piler
+      - MYSQL_USER=piler
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - piler_net
+
+  manticore:
+    image: manticoresearch/manticore:14.1.0
+    container_name: piler_manticore
+    restart: unless-stopped
+    volumes:
+      - piler_manticore:/var/lib/manticore
+    networks:
+      - piler_net
+    deploy:
+      resources:
+        reservations:
+          memory: 512M
+        limits:
+          memory: 512M
+
+  memcached:
+    image: memcached
+    container_name: piler_memcached
+    command: -m 64
+    restart: unless-stopped
+    networks:
+      - piler_net
+
+  piler:
+    image: sutoj/piler:${VERSION:-1.4.8}
+    container_name: piler
+    init: true
+    restart: unless-stopped
+    environment:
+      - MANTICORE_HOSTNAME=manticore
+      - MEMCACHED_HOSTNAME=memcached
+      - MYSQL_HOSTNAME=mysql
+      - MYSQL_DATABASE=piler
+      - MYSQL_USER=piler
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - PILER_HOSTNAME=${ARCHIVE_HOST}
+      - RT=1
+    ports:
+      - "${PILER_SMTP_PORT:-25}:25"
+    expose:
+      - "80"
+    volumes:
+      - piler_etc:/etc/piler
+      - /mnt/storagebox/piler-store:/var/piler/store
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.piler.entrypoints=websecure
+      - traefik.http.routers.piler.rule=Host(`${ARCHIVE_HOST}`)
+      - traefik.http.routers.piler.tls=true
+      - traefik.http.routers.piler.tls.certresolver=letsencrypt
+      - traefik.http.routers.piler.middlewares=rate-limit@file
+      - traefik.http.services.piler-svc.loadbalancer.server.port=80
+    healthcheck:
+      test: curl -s smtp://localhost/
+      interval: "20s"
+      timeout: "3s"
+      start_period: "15s"
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          memory: 512M
+        limits:
+          memory: 512M
+    depends_on:
+      - mysql
+      - memcached
+      - manticore
+    networks:
+      - piler_net
+      - azteas-net
+
+networks:
+  piler_net:
+    driver: bridge
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  db_data: {}
+  piler_etc: {}
+  piler_manticore: {}

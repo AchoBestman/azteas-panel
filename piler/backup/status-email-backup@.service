@@ -1,0 +1,6 @@
+[Unit]
+Description=Notification email d'echec pour %i
+
+[Service]
+Type=oneshot
+ExecStart=/opt/azteas-panel/piler/backup/notify-failure.sh "%i"

@@ -1,0 +1,98 @@
+name: Deploy Piler
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "piler/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.PILER_MYSQL_PASSWORD }}" ]       && missing+=("secret: PILER_MYSQL_PASSWORD")
+          [ -z "${{ secrets.PILER_B2_ACCOUNT_ID }}" ]        && missing+=("secret: PILER_B2_ACCOUNT_ID")
+          [ -z "${{ secrets.PILER_B2_APPLICATION_KEY }}" ]   && missing+=("secret: PILER_B2_APPLICATION_KEY")
+          [ -z "${{ secrets.RESTIC_PILER_PASSWORD }}" ]      && missing+=("secret: RESTIC_PILER_PASSWORD")
+          [ -z "${{ secrets.STORAGEBOX_PASSWORD }}" ]        && missing+=("secret: STORAGEBOX_PASSWORD")
+          [ -z "${{ vars.PILER_ARCHIVE_HOST }}" ]            && missing+=("var: PILER_ARCHIVE_HOST")
+          [ -z "${{ vars.PILER_SMTP_PORT }}" ]               && missing+=("var: PILER_SMTP_PORT")
+          [ -z "${{ vars.PILER_VERSION }}" ]                 && missing+=("var: PILER_VERSION")
+          [ -z "${{ vars.PILER_B2_BUCKET }}" ]               && missing+=("var: PILER_B2_BUCKET")
+          [ -z "${{ vars.MAIN_DOMAIN }}" ]                   && missing+=("var: MAIN_DOMAIN")
+          [ -z "${{ vars.STORAGEBOX_HOST }}" ]               && missing+=("var: STORAGEBOX_HOST")
+          [ -z "${{ vars.STORAGEBOX_USERNAME }}" ]           && missing+=("var: STORAGEBOX_USERNAME")
+          [ -z "${{ vars.STORAGEBOX_SHARE }}" ]              && missing+=("var: STORAGEBOX_SHARE")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Variables/secrets manquants dans GitHub :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env Piler
+        run: |
+          cat > /tmp/piler.env << 'EOF'
+          ARCHIVE_HOST=${{ vars.PILER_ARCHIVE_HOST }}
+          MAIN_DOMAIN=${{ vars.MAIN_DOMAIN }}
+          PILER_SMTP_PORT=${{ vars.PILER_SMTP_PORT }}
+          VERSION=${{ vars.PILER_VERSION }}
+          ADMIN_EMAIL=${{ vars.ADMIN_EMAIL }}
+          MYSQL_PASSWORD=${{ secrets.PILER_MYSQL_PASSWORD }}
+          STORAGEBOX_HOST=${{ vars.STORAGEBOX_HOST }}
+          STORAGEBOX_USERNAME=${{ vars.STORAGEBOX_USERNAME }}
+          STORAGEBOX_SHARE=${{ vars.STORAGEBOX_SHARE }}
+          STORAGEBOX_PASSWORD=${{ secrets.STORAGEBOX_PASSWORD }}
+          B2_ACCOUNT_ID=${{ secrets.PILER_B2_ACCOUNT_ID }}
+          B2_ACCOUNT_KEY=${{ secrets.PILER_B2_APPLICATION_KEY }}
+          B2_BUCKET=${{ vars.PILER_B2_BUCKET }}
+          RESTIC_PASSWORD=${{ secrets.RESTIC_PILER_PASSWORD }}
+          RESTIC_REPOSITORY=b2:${{ vars.PILER_B2_BUCKET }}:piler
+          EOF
+
+      - name: Sync piler/ vers le VPS
+        run: |
+          rsync -avz --delete \
+            --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            piler/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/piler/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/piler.env \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/piler/.env
+          rm -f /tmp/piler.env
+
+      - name: Démarrer Piler sur le VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            chmod 600 /opt/azteas-panel/piler/.env
+            cd /opt/azteas-panel/piler
+            docker compose pull
+            docker compose up -d
+            docker compose ps

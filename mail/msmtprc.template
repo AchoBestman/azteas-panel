@@ -1,0 +1,22 @@
+# Genere automatiquement par setup-mail.sh - NE PAS EDITER A LA MAIN
+# Toute modification doit se faire dans mail-env.sh puis relancer setup-mail.sh
+
+defaults
+auth           on
+tls            on
+tls_starttls   ${SMTP_STARTTLS}
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+logfile        /var/log/msmtp.log
+
+account        default
+host           ${SMTP_HOST}
+port           ${SMTP_PORT}
+from           ${SMTP_FROM}
+user           ${SMTP_USER}
+password       ${SMTP_PASSWORD}
+# Empeche tout appelant (mail, cron, fail2ban...) d'ecraser l'adresse
+# expediteur configuree ci-dessus via un parametre -f. Sans ca, la
+# commande "mail" du systeme envoie root@hostname, que Mailcow rejette
+# car cette adresse n'appartient pas au compte authentifie.
+auto_from      off
+allow_from_override off
