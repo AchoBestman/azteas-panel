@@ -84,10 +84,15 @@ if [ "$CONFIGURE_CREDENTIALS" = true ]; then
     chmod 600 "${TRAEFIK_DIR}/dynamic/.htpasswd"
     echo "    .htpasswd créé"
 
-    # 4. Créer le .env
+    # 4. Token Cloudflare
+    echo ""
+    read -p "    Token API Cloudflare (Zone:DNS:Edit) : " CF_TOKEN
+
+    # 5. Créer le .env
     cat > "${TRAEFIK_DIR}/.env" << EOF
 ACME_EMAIL=admin@azteas.com
 TRAEFIK_DASHBOARD_AUTH=${HASHED_ESCAPED}
+CF_DNS_API_TOKEN=${CF_TOKEN}
 EOF
     chmod 600 "${TRAEFIK_DIR}/.env"
     echo "    .env créé"
