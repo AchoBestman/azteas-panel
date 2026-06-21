@@ -63,6 +63,8 @@ fi
 echo ""
 echo "==> Application de la configuration Traefik..."
 
+sed -i 's/^HTTP_PORT=.*/HTTP_PORT=8080/' mailcow.conf
+sed -i 's/^HTTPS_PORT=.*/HTTPS_PORT=8443/' mailcow.conf
 sed -i 's/^SKIP_LETS_ENCRYPT=.*/SKIP_LETS_ENCRYPT=y/' mailcow.conf
 sed -i 's/^SKIP_HTTP_VERIFICATION=.*/SKIP_HTTP_VERIFICATION=y/' mailcow.conf
 
@@ -78,6 +80,8 @@ else
     echo "ENABLE_IPV6=false" >> mailcow.conf
 fi
 
+echo "    HTTP_PORT             : 8080 (Traefik gère 80)"
+echo "    HTTPS_PORT            : 8443 (Traefik gère 443)"
 echo "    Let's Encrypt interne : désactivé"
 echo "    AUTODISCOVER_SAN      : désactivé"
 echo "    IPv6                  : désactivé"

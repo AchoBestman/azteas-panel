@@ -18,7 +18,10 @@ services:
       - traefik.http.routers.mailcow.tls=true
       - traefik.http.routers.mailcow.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow.service=mailcow-svc
-      - traefik.http.routers.mailcow.middlewares=secure-headers@file,rate-limit@file
+      - traefik.http.routers.mailcow.middlewares=mailcow-proto@docker,secure-headers@file,rate-limit@file
+
+      # Indique à nginx-mailcow que la connexion est déjà HTTPS (évite la boucle de redirection)
+      - traefik.http.middlewares.mailcow-proto.headers.customrequestheaders.X-Forwarded-Proto=https
 
       # Route autoconfig : pour la configuration automatique des clients mail
       - traefik.http.routers.mailcow-autoconfig.entrypoints=websecure
