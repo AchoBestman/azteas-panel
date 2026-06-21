@@ -43,7 +43,7 @@ jobs:
 
       - name: Générer le .env Mailcow
         run: |
-          cat > /tmp/mailcow.env << EOF
+          cat > /tmp/mailcow.env << 'EOF'
 
           MAILCOW_HOSTNAME=${{ vars.MAILCOW_HOSTNAME }}
           MAILCOW_TZ=${{ vars.TZ }}

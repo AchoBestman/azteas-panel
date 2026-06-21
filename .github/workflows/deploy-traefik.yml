@@ -39,7 +39,7 @@ jobs:
 
       - name: Générer le .env Traefik
         run: |
-          cat > /tmp/traefik.env << EOF
+          cat > /tmp/traefik.env << 'EOF'
           ACME_EMAIL=${{ vars.ACME_EMAIL }}
           CF_DNS_API_TOKEN=${{ secrets.CF_DNS_API_TOKEN }}
           TRAEFIK_DASHBOARD_AUTH=${{ secrets.TRAEFIK_DASHBOARD_AUTH }}
