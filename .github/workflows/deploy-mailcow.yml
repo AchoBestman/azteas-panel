@@ -21,7 +21,7 @@ jobs:
         run: |
           missing=()
           [ -z "${{ secrets.MAILCOW_B2_ACCOUNT_ID }}" ]         && missing+=("secret: MAILCOW_B2_ACCOUNT_ID")
-          [ -z "${{ secrets.MAILCOW_B2_APPLICATION_KEY }}" ] && missing+=("secret: MAILCOW_B2_APPLICATION_KEY")
+          [ -z "${{ secrets.MAILCOW_B2_APPLICATION_KEY }}" ]  && missing+=("secret: MAILCOW_B2_APPLICATION_KEY")
           [ -z "${{ secrets.RESTIC_MAILCOW_PASSWORD }}" ]    && missing+=("secret: RESTIC_MAILCOW_PASSWORD")
           [ -z "${{ vars.MAILCOW_HOSTNAME }}" ]              && missing+=("var: MAILCOW_HOSTNAME")
           [ -z "${{ vars.TZ }}" ]                            && missing+=("var: TZ")
@@ -55,7 +55,7 @@ jobs:
           ENABLE_IPV6=false
           ADMIN_EMAIL=${{ vars.ADMIN_EMAIL }}
           B2_ACCOUNT_ID=${{ secrets.MAILCOW_B2_ACCOUNT_ID }}
-          B2_APPLICATION_KEY=${{ secrets.MAILCOW_B2_APPLICATION_KEY }}
+          B2_ACCOUNT_KEY=${{ secrets.MAILCOW_B2_APPLICATION_KEY }}
           B2_BUCKET=${{ vars.MAILCOW_B2_BUCKET }}
           RESTIC_PASSWORD=${{ secrets.RESTIC_MAILCOW_PASSWORD }}
           RESTIC_REPOSITORY=b2:${{ vars.MAILCOW_B2_BUCKET }}:mailcow
