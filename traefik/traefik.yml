@@ -23,7 +23,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: "${ACME_EMAIL}"
+      email: "admin@azteas.com"
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
