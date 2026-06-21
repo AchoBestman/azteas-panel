@@ -88,6 +88,12 @@ jobs:
             chmod 600 /opt/azteas-panel/mailcow/.env
             if [ -d /opt/mailcow-dockerized ]; then
               cp /opt/azteas-panel/mailcow/docker-compose.override.yml /opt/mailcow-dockerized/docker-compose.override.yml
-              cd /opt/mailcow-dockerized
-              docker compose up -d nginx-mailcow certdumper
+              # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
+              if docker network ls | grep -q mailcowdockerized_mailcow-network; then
+                cd /opt/mailcow-dockerized
+                docker compose up -d nginx-mailcow certdumper
+                echo "Services mis à jour"
+              else
+                echo "Mailcow pas encore démarré — lancer manuellement : cd /opt/mailcow-dockerized && docker compose up -d"
+              fi
             fi
