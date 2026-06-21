@@ -1,0 +1,28 @@
+REGLES ABSOLUES DE SECURITE - LIRE AVANT TOUT COMMIT
+======================================================
+
+JAMAIS une clé, un secret, un mot de passe ou un token ne sera commité sur ce dépôt.
+
+Cela inclut sans exception :
+  - Clés API (Stripe, GitHub, AWS, Backblaze, etc.)
+  - Mots de passe de bases de données
+  - Tokens JWT / secrets de session
+  - Credentials SSH ou SFTP
+  - Credentials Hetzner Storage Box (CIFS)
+  - Clés de chiffrement ou certificats privés
+  - Tokens GitHub Actions (définis uniquement dans les secrets du dépôt)
+
+RÈGLE :
+  Toute valeur secrète est définie dans le fichier .env à la racine du service concerné.
+  Chaque service possède un fichier .env.example (sans valeurs réelles) commité à sa place.
+
+  .env        → jamais commité (dans .gitignore)
+  .env.example → toujours commité (valeurs vides ou exemples fictifs)
+
+Si tu découvres qu'une clé a été commitée par erreur :
+  1. Révoquer immédiatement la clé auprès du service concerné
+  2. Nettoyer l'historique git (git filter-branch ou BFG Repo Cleaner)
+  3. Forcer le push après nettoyage
+  4. Notifier les membres du projet
+
+Ce fichier est là pour rappel humain. Le .gitignore est la barrière technique.
