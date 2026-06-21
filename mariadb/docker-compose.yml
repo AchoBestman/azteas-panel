@@ -1,0 +1,52 @@
+services:
+  mariadb:
+    image: mariadb:11.7
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_USER=${MARIADB_USER}
+      - MYSQL_PASSWORD=${MARIADB_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - mariadb_net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+      - UPLOAD_LIMIT=256M
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.phpmyadmin.entrypoints=websecure
+      - traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.azteas.com`)
+      - traefik.http.routers.phpmyadmin.tls=true
+      - traefik.http.routers.phpmyadmin.tls.certresolver=letsencrypt
+      - traefik.http.routers.phpmyadmin.middlewares=auth-basic@file,rate-limit-admin@file
+      - traefik.http.services.phpmyadmin-svc.loadbalancer.server.port=80
+    networks:
+      - mariadb_net
+      - azteas-net
+
+networks:
+  mariadb_net:
+    driver: bridge
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  mariadb_data: {}

@@ -1,0 +1,75 @@
+name: Deploy PostgreSQL
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "postgresql/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.POSTGRES_PASSWORD }}" ]  && missing+=("secret: POSTGRES_PASSWORD")
+          [ -z "${{ secrets.PGADMIN_PASSWORD }}" ]   && missing+=("secret: PGADMIN_PASSWORD")
+          [ -z "${{ vars.POSTGRES_USER }}" ]          && missing+=("var: POSTGRES_USER")
+          [ -z "${{ vars.PGADMIN_EMAIL }}" ]          && missing+=("var: PGADMIN_EMAIL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Manquants :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env
+        run: |
+          cat > /tmp/postgresql.env << 'EOF'
+          POSTGRES_USER=${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ vars.POSTGRES_DB || 'postgres' }}
+          PGADMIN_EMAIL=${{ vars.PGADMIN_EMAIL }}
+          PGADMIN_PASSWORD=${{ secrets.PGADMIN_PASSWORD }}
+          EOF
+
+      - name: Sync postgresql/ vers le VPS
+        run: |
+          rsync -avz --delete --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            postgresql/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/postgresql/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/postgresql.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/postgresql/.env
+          rm -f /tmp/postgresql.env
+
+      - name: Démarrer PostgreSQL
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            chmod 600 /opt/azteas-panel/postgresql/.env
+            cd /opt/azteas-panel/postgresql
+            docker compose pull
+            docker compose up -d
+            docker compose ps

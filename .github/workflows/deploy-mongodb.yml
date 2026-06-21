@@ -1,0 +1,70 @@
+name: Deploy MongoDB
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mongodb/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.MONGO_ROOT_PASSWORD }}" ]  && missing+=("secret: MONGO_ROOT_PASSWORD")
+          [ -z "${{ vars.MONGO_ROOT_USERNAME }}" ]      && missing+=("var: MONGO_ROOT_USERNAME")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Manquants :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env
+        run: |
+          cat > /tmp/mongodb.env << 'EOF'
+          MONGO_ROOT_USERNAME=${{ vars.MONGO_ROOT_USERNAME }}
+          MONGO_ROOT_PASSWORD=${{ secrets.MONGO_ROOT_PASSWORD }}
+          EOF
+
+      - name: Sync mongodb/ vers le VPS
+        run: |
+          rsync -avz --delete --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            mongodb/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/mongodb/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/mongodb.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/mongodb/.env
+          rm -f /tmp/mongodb.env
+
+      - name: Démarrer MongoDB
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            chmod 600 /opt/azteas-panel/mongodb/.env
+            cd /opt/azteas-panel/mongodb
+            docker compose pull
+            docker compose up -d
+            docker compose ps

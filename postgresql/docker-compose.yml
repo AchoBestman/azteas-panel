@@ -1,0 +1,57 @@
+services:
+  postgresql:
+    image: pgvector/pgvector:pg17
+    container_name: postgresql
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - postgresql_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_CONFIG_SERVER_MODE=True
+      - PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=True
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.azteas.com`)
+      - traefik.http.routers.pgadmin.tls=true
+      - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
+      - traefik.http.routers.pgadmin.middlewares=rate-limit-admin@file
+      - traefik.http.services.pgadmin-svc.loadbalancer.server.port=80
+    networks:
+      - postgresql_net
+      - azteas-net
+
+networks:
+  postgresql_net:
+    driver: bridge
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  postgresql_data: {}
+  pgadmin_data: {}

@@ -13,9 +13,9 @@ echo "==> Configuration UFW pour Piler"
 sudo ufw allow 2526/tcp comment "Piler SMTP archiving"
 echo "    UFW : port 2526/tcp autorisé"
 
-# ufw-docker pour que le trafic atteigne le conteneur piler
-sudo ufw-docker allow piler 2526/tcp
-echo "    ufw-docker : piler 2526/tcp autorisé"
+# ufw-docker utilise le port INTERNE du conteneur (25), pas l'externe (2526)
+sudo ufw-docker allow piler 25/tcp
+echo "    ufw-docker : piler port interne 25/tcp autorisé (publié en 2526)"
 
 echo ""
 echo "==> Vérification"

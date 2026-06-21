@@ -83,7 +83,7 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/piler/.env
           rm -f /tmp/piler.env
 
-      - name: Démarrer Piler sur le VPS
+      - name: Démarrer Piler et appliquer les correctifs
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -95,4 +95,7 @@ jobs:
             cd /opt/azteas-panel/piler
             docker compose pull
             docker compose up -d
+            echo "Attente démarrage Piler..."
+            sleep 15
+            bash fix-piler-config.sh
             docker compose ps
