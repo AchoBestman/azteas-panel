@@ -16,16 +16,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
       - name: Sync traefik/ vers le VPS
-        uses: burntsushi/rsync-deployments@master
-        with:
-          switches: -avz --delete --exclude='.env' --exclude='letsencrypt/' --exclude='dynamic/.htpasswd'
-          path: traefik/
-          remote_path: /opt/azteas-panel/traefik/
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_port: ${{ secrets.VPS_PORT }}
-          remote_user: ${{ secrets.VPS_USER }}
-          remote_key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+        run: |
+          rsync -avz --delete \
+            --exclude='.env' \
+            --exclude='letsencrypt/' \
+            --exclude='dynamic/.htpasswd' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            traefik/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/traefik/
 
       - name: Redémarrer Traefik
         uses: appleboy/ssh-action@v1
