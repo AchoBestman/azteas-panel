@@ -21,7 +21,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.middlewares=auth-basic@file,secure-headers@file,rate-limit-admin@file"
+      - "traefik.http.routers.traefik-dashboard.middlewares=auth-basic@file,rate-limit-admin@file"
     networks:
       - azteas-net
 
