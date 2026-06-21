@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup chiffré de Mailcow vers Backblaze B2
+After=docker.service
+Requires=docker.service
+OnFailure=status-email-backup@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/azteas-panel/mailcow/backup/backup-mailcow.sh

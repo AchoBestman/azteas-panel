@@ -21,11 +21,26 @@ sudo mkdir -p /opt/azteas-panel
 sudo chown $USER:$USER /opt/azteas-panel
 
 # ----------------------------------------------------------
-# 2. Vérification
+# 2. Ajouter l'utilisateur au groupe docker
+# ----------------------------------------------------------
+sudo usermod -aG docker $USER
+newgrp docker
+
+# ----------------------------------------------------------
+# 3. Autoriser Traefik à recevoir le trafic web via ufw-docker
+# IMPORTANT : à relancer à chaque nouveau service exposé publiquement
+# ----------------------------------------------------------
+sudo ufw-docker allow traefik 80
+sudo ufw-docker allow traefik 443
+
+# ----------------------------------------------------------
+# 4. Vérification
 # ----------------------------------------------------------
 ls -la /opt/
+docker ps
+sudo ufw status
 COMMANDS
 
 echo ""
-echo "Ensuite depuis ta machine locale, relance :"
+echo "Ensuite depuis ta machine locale :"
 echo "  ./sync.sh"

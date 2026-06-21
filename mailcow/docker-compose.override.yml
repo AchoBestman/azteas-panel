@@ -1,0 +1,71 @@
+# Ce fichier est copié dans /opt/mailcow-dockerized/ par setup.sh
+# Configuration officielle Mailcow + Traefik v3
+# Ref: https://docs.mailcow.email/post_installation/reverse-proxy/r_p-traefik3/
+
+services:
+
+  # Nginx de Mailcow : connecté à azteas-net pour que Traefik le joigne
+  nginx-mailcow:
+    expose:
+      - 8080
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+
+      # Route principale : mail.azteas.com
+      - traefik.http.routers.mailcow.entrypoints=websecure
+      - traefik.http.routers.mailcow.rule=Host(`mail.azteas.com`)
+      - traefik.http.routers.mailcow.tls=true
+      - traefik.http.routers.mailcow.tls.certresolver=letsencrypt
+      - traefik.http.routers.mailcow.service=mailcow-svc
+      - traefik.http.routers.mailcow.middlewares=secure-headers@file,rate-limit@file
+
+      # Route autoconfig : pour la configuration automatique des clients mail
+      - traefik.http.routers.mailcow-autoconfig.entrypoints=websecure
+      - traefik.http.routers.mailcow-autoconfig.rule=Host(`autoconfig.azteas.com`) && Path(`/mail/config-v1.1.xml`)
+      - traefik.http.routers.mailcow-autoconfig.tls.certresolver=letsencrypt
+      - traefik.http.routers.mailcow-autoconfig.service=mailcow-svc
+
+      # Route autodiscover : pour Outlook/Exchange
+      - traefik.http.routers.mailcow-autodiscover.entrypoints=websecure
+      - traefik.http.routers.mailcow-autodiscover.rule=Host(`autodiscover.azteas.com`) && Path(`/autodiscover/autodiscover.xml`)
+      - traefik.http.routers.mailcow-autodiscover.tls.certresolver=letsencrypt
+      - traefik.http.routers.mailcow-autodiscover.service=mailcow-svc
+
+      # Service commun
+      - traefik.http.services.mailcow-svc.loadbalancer.server.port=8080
+
+    networks:
+      mailcow-network:
+        aliases:
+          - nginx
+      azteas-net:
+
+  # Certdumper : extrait les certificats Traefik vers Mailcow
+  # pour que postfix/dovecot utilisent le bon certificat SSL
+  certdumper:
+    image: ghcr.io/kereis/traefik-certs-dumper:latest
+    container_name: mailcow_certdumper
+    restart: unless-stopped
+    network_mode: none
+    command: --restart-containers mailcowdockerized-postfix-mailcow-1,mailcowdockerized-dovecot-mailcow-1
+    volumes:
+      - traefik_letsencrypt:/traefik:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/mailcow-dockerized/data/assets/ssl:/output:rw
+    environment:
+      - DOMAIN=azteas.com
+      - ACME_FILE_PATH=/traefik/acme.json
+
+networks:
+  azteas-net:
+    external: true
+    name: azteas-net
+  mailcow-network:
+    external: true
+    name: mailcowdockerized_mailcow-network
+
+volumes:
+  traefik_letsencrypt:
+    external: true
+    name: traefik_letsencrypt

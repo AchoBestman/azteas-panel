@@ -1,0 +1,11 @@
+[Unit]
+Description=Execute le backup Mailcow tous les jours
+
+[Timer]
+# Tous les jours à 4h du matin (décalé d'1h par rapport à Piler à 3h)
+OnCalendar=*-*-* 04:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

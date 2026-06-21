@@ -17,12 +17,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.CF_DNS_API_TOKEN }}" ]        && missing+=("secret: CF_DNS_API_TOKEN")
+          [ -z "${{ secrets.TRAEFIK_DASHBOARD_AUTH }}" ]  && missing+=("secret: TRAEFIK_DASHBOARD_AUTH")
+          [ -z "${{ vars.ACME_EMAIL }}" ]                  && missing+=("var: ACME_EMAIL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Variables/secrets manquants dans GitHub :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
       - name: Configurer la clé SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env Traefik
+        run: |
+          cat > /tmp/traefik.env << EOF
+          ACME_EMAIL=${{ vars.ACME_EMAIL }}
+          CF_DNS_API_TOKEN=${{ secrets.CF_DNS_API_TOKEN }}
+          TRAEFIK_DASHBOARD_AUTH=${{ secrets.TRAEFIK_DASHBOARD_AUTH }}
+          EOF
 
       - name: Sync traefik/ vers le VPS
         run: |
@@ -34,6 +55,14 @@ jobs:
             traefik/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/traefik/
 
+      - name: Déployer le .env et redémarrer Traefik
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/traefik.env \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/traefik/.env
+          rm -f /tmp/traefik.env
+
       - name: Redémarrer Traefik
         uses: appleboy/ssh-action@v1
         with:
@@ -42,6 +71,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
+            chmod 600 /opt/azteas-panel/traefik/.env
             cd /opt/azteas-panel/traefik
             docker compose pull
             docker compose up -d
