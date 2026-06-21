@@ -18,24 +18,21 @@ services:
       - traefik.http.routers.mailcow.tls=true
       - traefik.http.routers.mailcow.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow.service=mailcow-svc
-      - traefik.http.routers.mailcow.middlewares=mailcow-proto@docker,secure-headers@file,rate-limit@file
+      - traefik.http.routers.mailcow.middlewares=rate-limit@file
 
-      # Indique à nginx-mailcow que la connexion est déjà HTTPS (évite la boucle de redirection)
-      - traefik.http.middlewares.mailcow-proto.headers.customrequestheaders.X-Forwarded-Proto=https
-
-      # Route autoconfig : pour la configuration automatique des clients mail
+      # Route autoconfig
       - traefik.http.routers.mailcow-autoconfig.entrypoints=websecure
       - traefik.http.routers.mailcow-autoconfig.rule=Host(`autoconfig.azteas.com`) && Path(`/mail/config-v1.1.xml`)
       - traefik.http.routers.mailcow-autoconfig.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow-autoconfig.service=mailcow-svc
 
-      # Route autodiscover : pour Outlook/Exchange
+      # Route autodiscover
       - traefik.http.routers.mailcow-autodiscover.entrypoints=websecure
       - traefik.http.routers.mailcow-autodiscover.rule=Host(`autodiscover.azteas.com`) && Path(`/autodiscover/autodiscover.xml`)
       - traefik.http.routers.mailcow-autodiscover.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow-autodiscover.service=mailcow-svc
 
-      # Service commun
+      # Service : port 8080 HTTP (doc officielle Mailcow + Traefik)
       - traefik.http.services.mailcow-svc.loadbalancer.server.port=8080
 
     networks:
@@ -45,7 +42,6 @@ services:
       azteas-net:
 
   # Certdumper : extrait les certificats Traefik vers Mailcow
-  # pour que postfix/dovecot utilisent le bon certificat SSL
   certdumper:
     image: ghcr.io/kereis/traefik-certs-dumper:latest
     container_name: mailcow_certdumper
