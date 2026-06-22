@@ -54,7 +54,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /opt/mailcow-dockerized/data/assets/ssl:/output:rw
     environment:
-      - DOMAIN=azteas.com
+      - DOMAIN=mail.azteas.com
       - ACME_FILE_PATH=/traefik/acme.json
 
 networks:
