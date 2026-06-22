@@ -92,7 +92,17 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
             chmod 600 /opt/azteas-panel/piler/.env
+
+            # Initialiser le repo restic si nécessaire
             cd /opt/azteas-panel/piler
+            set -a; source .env > /dev/null 2>&1; set +a
+            if ! restic snapshots > /dev/null 2>&1; then
+              echo "Initialisation du repository restic Backblaze B2..."
+              restic init > /dev/null && echo "Repository initialisé" || echo "⚠️  Echec initialisation restic"
+            else
+              echo "Repository restic déjà initialisé"
+            fi
+
             docker compose pull
             docker compose up -d
             echo "Attente démarrage Piler..."
