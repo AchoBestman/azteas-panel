@@ -34,7 +34,7 @@ services:
       - traefik.http.routers.coolify.tls=true
       - traefik.http.routers.coolify.tls.certresolver=letsencrypt
       - traefik.http.routers.coolify.middlewares=rate-limit@file
-      - traefik.http.services.coolify-svc.loadbalancer.server.port=8000
+      - traefik.http.services.coolify-svc.loadbalancer.server.port=8080
     depends_on:
       coolify-db:
         condition: service_healthy
