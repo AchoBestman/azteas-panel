@@ -79,10 +79,10 @@ log "2/8 - Configuration ufw"
 ufw default deny incoming
 ufw default allow outgoing
 
-ufw allow "${SSH_PORT:-1995}/tcp" comment 'SSH'
+ufw allow "${VPS_PORT}/tcp" comment 'SSH'
 ufw allow 80/tcp
 ufw allow 443/tcp
-ufw allow "${PILER_SMTP_PORT:-2526}/tcp" comment 'Piler SMTP archiving'
+ufw allow "${PILER_SMTP_PORT}/tcp" comment 'Piler SMTP archiving'
 
 yes | ufw enable || true
 ufw status verbose

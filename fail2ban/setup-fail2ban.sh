@@ -22,9 +22,9 @@ if ! command -v fail2ban-client &>/dev/null; then
     echo "    fail2ban installé"
 fi
 
-# Charger le .env global pour SSH_PORT, ADMIN_EMAIL, SMTP_FROM
+# Charger le .env global pour VPS_PORT, ADMIN_EMAIL, SMTP_FROM
 if [ ! -f "$ENV_FILE" ]; then
-    echo "⚠️  /opt/azteas-panel/.env introuvable — créer ce fichier avec SSH_PORT, ADMIN_EMAIL, SMTP_FROM"
+    echo "⚠️  /opt/azteas-panel/.env introuvable — créer ce fichier avec VPS_PORT, ADMIN_EMAIL, SMTP_FROM"
     exit 1
 fi
 source "$ENV_FILE" > /dev/null 2>&1
@@ -37,8 +37,8 @@ sudo cp "$FAIL2BAN_DIR/filter.d/"*.conf /etc/fail2ban/filter.d/
 echo "    Génération du jail..."
 sed \
     -e "s|\${ADMIN_EMAIL}|${ADMIN_EMAIL}|g" \
-    -e "s|\${SMTP_FROM}|${SMTP_FROM:-noreply@azteas.com}|g" \
-    -e "s|\${SSH_PORT}|${SSH_PORT:-1995}|g" \
+    -e "s|\${SMTP_FROM}|${SMTP_FROM}|g" \
+    -e "s|\${VPS_PORT}|${VPS_PORT}|g" \
     "$FAIL2BAN_DIR/jail.d/azteas.local.template" \
     | sudo tee /etc/fail2ban/jail.d/azteas.local > /dev/null
 

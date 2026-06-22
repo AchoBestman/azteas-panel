@@ -68,11 +68,11 @@ bantime   = 3600
 # JAIL 6 - SSH
 # ============================================================
 [sshd]
-enabled  = true
-port     = ${SSH_PORT},22,2222
-maxretry = 3
-findtime = 600
-bantime  = 86400
+enabled   = true
+banaction = %(banaction_allports)s
+maxretry  = 3
+findtime  = 600
+bantime   = 86400
 
 # ============================================================
 # JAIL 7 - Récidivistes : banni définitivement après 2 bans
