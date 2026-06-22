@@ -110,6 +110,9 @@ services:
 networks:
   coolify_net:
     driver: bridge
+  coolify:
+    name: coolify
+    driver: bridge
   azteas-net:
     external: true
     name: azteas-net

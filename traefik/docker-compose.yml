@@ -25,11 +25,15 @@ services:
       - "traefik.http.routers.traefik-dashboard.middlewares=auth-basic@file,secure-headers@file,rate-limit-admin@file"
     networks:
       - azteas-net
+      - coolify
 
 networks:
   azteas-net:
     name: azteas-net
     driver: bridge
+  coolify:
+    external: true
+    name: coolify
 
 volumes:
   letsencrypt: {}

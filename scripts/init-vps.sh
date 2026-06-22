@@ -33,14 +33,20 @@ sudo usermod -aG docker $USER
 newgrp docker
 
 # ----------------------------------------------------------
-# 3. Autoriser Traefik à recevoir le trafic web via ufw-docker
+# 4. Autoriser Traefik à recevoir le trafic web via ufw-docker
 # IMPORTANT : à relancer à chaque nouveau service exposé publiquement
 # ----------------------------------------------------------
 sudo ufw-docker allow traefik 80
 sudo ufw-docker allow traefik 443
 
 # ----------------------------------------------------------
-# 4. Vérification
+# 5. Autoriser sudo sans mot de passe pour Coolify (déploiements)
+# ----------------------------------------------------------
+echo "$USER ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/coolify
+sudo chmod 440 /etc/sudoers.d/coolify
+
+# ----------------------------------------------------------
+# 7. Vérification
 # ----------------------------------------------------------
 ls -la /opt/
 docker ps
