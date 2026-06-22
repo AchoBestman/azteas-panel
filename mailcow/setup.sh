@@ -116,8 +116,12 @@ export RESTIC_PASSWORD
 echo ""
 echo "==> Initialisation du repository restic Backblaze B2..."
 if ! restic snapshots > /dev/null 2>&1; then
-    restic init > /dev/null
-    echo "    Repository initialisé"
+    if restic init > /dev/null 2>&1; then
+        echo "    Repository initialisé"
+    else
+        echo "    ⚠️  Initialisation restic échouée (vérifier les credentials B2 dans GitHub secrets)"
+        echo "    Le timer sera quand même installé — relancer setup.sh une fois les credentials corrigés"
+    fi
 else
     echo "    Repository déjà initialisé"
 fi
