@@ -29,6 +29,14 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 source "$ENV_FILE" > /dev/null 2>&1
 
+# Créer les fichiers de log si absents (fail2ban échoue s'ils n'existent pas)
+sudo mkdir -p /var/log/traefik
+sudo touch /var/log/traefik/access.log
+sudo touch /var/log/fail2ban.log
+sudo touch /var/log/piler-backup.log
+sudo touch /var/log/mailcow-backup.log
+echo "    Fichiers de log créés si absents"
+
 # Copier les filtres
 echo "    Copie des filtres..."
 sudo cp "$FAIL2BAN_DIR/filter.d/"*.conf /etc/fail2ban/filter.d/
