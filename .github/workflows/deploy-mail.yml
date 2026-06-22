@@ -1,0 +1,43 @@
+name: Deploy Mail (msmtp)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mail/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync mail/ vers le VPS
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            mail/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/mail/
+
+      - name: Appliquer la configuration msmtp
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            sudo bash /opt/azteas-panel/mail/setup-mail.sh
+            echo "Test d'envoi email..."
+            echo "msmtp configuré depuis le workflow deploy-mail" | mail -s "[azteas-panel] msmtp configured" $(grep '^ADMIN_EMAIL' /opt/azteas-panel/.env | cut -d= -f2)
