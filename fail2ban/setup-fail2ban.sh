@@ -37,6 +37,9 @@ sudo touch /var/log/piler-backup.log
 sudo touch /var/log/mailcow-backup.log
 echo "    Fichiers de log créés si absents"
 
+# Supprimer les anciens jails incompatibles
+sudo rm -f /etc/fail2ban/jail.d/piler.local
+
 # Copier les filtres
 echo "    Copie des filtres..."
 sudo cp "$FAIL2BAN_DIR/filter.d/"*.conf /etc/fail2ban/filter.d/
