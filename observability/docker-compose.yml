@@ -1,0 +1,74 @@
+services:
+
+  loki:
+    image: grafana/loki:3.4.3
+    container_name: loki
+    restart: unless-stopped
+    volumes:
+      - ./loki/config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/tmp/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 -O- http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  promtail:
+    image: grafana/promtail:3.4.3
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - observability_net
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=https://grafana.azteas.com
+      - GF_SERVER_DOMAIN=grafana.azteas.com
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-lokiexplore-app
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.rule=Host(`grafana.azteas.com`)
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.tls.certresolver=letsencrypt
+      - traefik.http.routers.grafana.middlewares=rate-limit-admin@file
+      - traefik.http.services.grafana-svc.loadbalancer.server.port=3000
+    networks:
+      - observability_net
+      - azteas-net
+
+networks:
+  observability_net:
+    driver: bridge
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  loki_data: {}
+  grafana_data: {}

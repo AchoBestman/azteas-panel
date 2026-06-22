@@ -1,0 +1,74 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+
+  # ---- Logs Docker (tous les conteneurs) ----
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: service
+      - source_labels: [__meta_docker_container_label_com_docker_compose_project]
+        target_label: project
+
+  # ---- Logs Traefik access ----
+  - job_name: traefik_access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: traefik_access
+          service: traefik
+          __path__: /var/log/traefik/access.log
+
+  # ---- Logs fail2ban ----
+  - job_name: fail2ban
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: fail2ban
+          service: fail2ban
+          __path__: /var/log/fail2ban.log
+
+  # ---- Logs système (journald via fichier) ----
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          service: system
+          __path__: /var/log/syslog
+
+  # ---- Logs piler backup ----
+  - job_name: piler_backup
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: piler_backup
+          service: piler
+          __path__: /var/log/piler-backup.log
+
+  # ---- Logs mailcow backup ----
+  - job_name: mailcow_backup
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: mailcow_backup
+          service: mailcow
+          __path__: /var/log/mailcow-backup.log
