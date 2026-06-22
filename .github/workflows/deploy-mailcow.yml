@@ -86,6 +86,17 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
             chmod 600 /opt/azteas-panel/mailcow/.env
+
+            # Initialiser le repo restic si nécessaire
+            cd /opt/azteas-panel/mailcow
+            set -a; source .env > /dev/null 2>&1; set +a
+            if ! restic snapshots > /dev/null 2>&1; then
+              echo "Initialisation du repository restic Backblaze B2..."
+              restic init > /dev/null && echo "Repository initialisé" || echo "⚠️  Echec initialisation restic"
+            else
+              echo "Repository restic déjà initialisé"
+            fi
+
             if [ -d /opt/mailcow-dockerized ]; then
               cp /opt/azteas-panel/mailcow/docker-compose.override.yml /opt/mailcow-dockerized/docker-compose.override.yml
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
