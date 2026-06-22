@@ -53,7 +53,19 @@ findtime  = 600
 bantime   = 3600
 
 # ============================================================
-# JAIL 5 - SSH
+# JAIL 5 - Coolify
+# ============================================================
+[coolify-auth]
+enabled   = true
+filter    = coolify-auth
+logpath   = /var/log/traefik/access.log
+banaction = %(banaction_allports)s
+maxretry  = 3
+findtime  = 600
+bantime   = 3600
+
+# ============================================================
+# JAIL 6 - SSH
 # ============================================================
 [sshd]
 enabled  = true
@@ -63,7 +75,7 @@ findtime = 600
 bantime  = 86400
 
 # ============================================================
-# JAIL 6 - Récidivistes : banni définitivement après 2 bans
+# JAIL 7 - Récidivistes : banni définitivement après 2 bans
 # ============================================================
 [recidive]
 enabled   = true

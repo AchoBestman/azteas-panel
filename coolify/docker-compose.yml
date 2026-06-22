@@ -1,0 +1,120 @@
+services:
+
+  coolify:
+    image: ghcr.io/coollabsio/coolify:latest
+    container_name: coolify
+    restart: unless-stopped
+    environment:
+      - APP_ID=${COOLIFY_APP_ID}
+      - APP_KEY=${COOLIFY_APP_KEY}
+      - APP_URL=https://coolify.azteas.com
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=coolify-db
+      - DB_PORT=5432
+      - DB_DATABASE=coolify
+      - DB_USERNAME=coolify
+      - DB_PASSWORD=${COOLIFY_DB_PASSWORD}
+      - REDIS_HOST=coolify-redis
+      - REDIS_PASSWORD=${COOLIFY_REDIS_PASSWORD}
+      - QUEUE_CONNECTION=redis
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      # Désactive le proxy interne — notre Traefik gère le SSL
+      - PROXY_TYPE=none
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - coolify_data:/var/www/html/storage
+      - /etc/coolify:/etc/coolify
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.coolify.entrypoints=websecure
+      - traefik.http.routers.coolify.rule=Host(`coolify.azteas.com`)
+      - traefik.http.routers.coolify.tls=true
+      - traefik.http.routers.coolify.tls.certresolver=letsencrypt
+      - traefik.http.routers.coolify.middlewares=rate-limit@file
+      - traefik.http.services.coolify-svc.loadbalancer.server.port=8000
+    depends_on:
+      coolify-db:
+        condition: service_healthy
+      coolify-redis:
+        condition: service_healthy
+    networks:
+      - coolify_net
+      - azteas-net
+
+  coolify-db:
+    image: pgvector/pgvector:pg17
+    container_name: coolify-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=coolify
+      - POSTGRES_PASSWORD=${COOLIFY_DB_PASSWORD}
+      - POSTGRES_DB=coolify
+    volumes:
+      - coolify_db_data:/var/lib/postgresql/data
+    networks:
+      - coolify_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coolify"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  coolify-redis:
+    image: redis/redis-stack-server:latest
+    container_name: coolify-redis
+    restart: unless-stopped
+    environment:
+      - REDIS_ARGS=--requirepass ${COOLIFY_REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - coolify_redis_data:/data
+    networks:
+      - coolify_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${COOLIFY_REDIS_PASSWORD}", "--no-auth-warning", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  coolify-worker:
+    image: ghcr.io/coollabsio/coolify:latest
+    container_name: coolify-worker
+    restart: unless-stopped
+    command: php artisan horizon
+    environment:
+      - APP_ID=${COOLIFY_APP_ID}
+      - APP_KEY=${COOLIFY_APP_KEY}
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=coolify-db
+      - DB_PORT=5432
+      - DB_DATABASE=coolify
+      - DB_USERNAME=coolify
+      - DB_PASSWORD=${COOLIFY_DB_PASSWORD}
+      - REDIS_HOST=coolify-redis
+      - REDIS_PASSWORD=${COOLIFY_REDIS_PASSWORD}
+      - QUEUE_CONNECTION=redis
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - coolify_data:/var/www/html/storage
+    depends_on:
+      coolify-db:
+        condition: service_healthy
+      coolify-redis:
+        condition: service_healthy
+    networks:
+      - coolify_net
+
+networks:
+  coolify_net:
+    driver: bridge
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  coolify_data: {}
+  coolify_db_data: {}
+  coolify_redis_data: {}
