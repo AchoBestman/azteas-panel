@@ -42,7 +42,7 @@ sed \
     "$FAIL2BAN_DIR/jail.d/azteas.local.template" \
     | sudo tee /etc/fail2ban/jail.d/azteas.local > /dev/null
 
-# Redémarrer fail2ban
+# Redémarrer fail2ban.
 sudo systemctl enable fail2ban
 sudo systemctl restart fail2ban
 
