@@ -19,6 +19,7 @@ entryPoints:
     http:
       tls:
         certResolver: letsencrypt
+        options: default
 
 certificatesResolvers:
   letsencrypt:
