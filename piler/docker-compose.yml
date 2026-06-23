@@ -71,7 +71,7 @@ services:
       - traefik.http.routers.piler.rule=Host(`${ARCHIVE_HOST}`)
       - traefik.http.routers.piler.tls=true
       - traefik.http.routers.piler.tls.certresolver=letsencrypt
-      - traefik.http.routers.piler.middlewares=rate-limit@file
+      - traefik.http.routers.piler.middlewares=secure-headers@file,rate-limit@file
       - traefik.http.services.piler-svc.loadbalancer.server.port=80
     healthcheck:
       test: curl -s smtp://localhost/

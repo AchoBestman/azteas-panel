@@ -18,7 +18,7 @@ services:
       - traefik.http.routers.mailcow.tls=true
       - traefik.http.routers.mailcow.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow.service=mailcow-svc
-      - traefik.http.routers.mailcow.middlewares=rate-limit@file
+      - traefik.http.routers.mailcow.middlewares=secure-headers@file,rate-limit@file
 
       # Route autoconfig
       - traefik.http.routers.mailcow-autoconfig.entrypoints=websecure

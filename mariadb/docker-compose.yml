@@ -35,7 +35,7 @@ services:
       - traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.azteas.com`)
       - traefik.http.routers.phpmyadmin.tls=true
       - traefik.http.routers.phpmyadmin.tls.certresolver=letsencrypt
-      - traefik.http.routers.phpmyadmin.middlewares=auth-basic@file,rate-limit-admin@file
+      - traefik.http.routers.phpmyadmin.middlewares=auth-basic@file,secure-headers@file,rate-limit-admin@file
       - traefik.http.services.phpmyadmin-svc.loadbalancer.server.port=80
     networks:
       - mariadb_net
