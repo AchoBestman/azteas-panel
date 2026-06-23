@@ -9,6 +9,7 @@ services:
       - redis_data:/data
     networks:
       - redis_net
+      - coolify
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
       interval: 10s
@@ -43,6 +44,9 @@ networks:
   azteas-net:
     external: true
     name: azteas-net
+  coolify:
+    external: true
+    name: coolify
 
 volumes:
   redis_data: {}
