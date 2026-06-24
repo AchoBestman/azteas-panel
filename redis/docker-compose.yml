@@ -4,7 +4,7 @@ services:
     container_name: redis
     restart: unless-stopped
     environment:
-      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes
+      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes --databases 16 --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:

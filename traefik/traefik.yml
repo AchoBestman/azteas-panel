@@ -21,6 +21,7 @@ entryPoints:
         certResolver: letsencrypt
         options: default
 
+
 certificatesResolvers:
   letsencrypt:
     acme:
