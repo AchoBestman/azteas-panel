@@ -46,6 +46,18 @@ echo "$USER ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/coolify
 sudo chmod 440 /etc/sudoers.d/coolify
 
 # ----------------------------------------------------------
+# 6. Tuer les processus orphelins à la déconnexion SSH
+#    Evite que des processus lancés en SSH restent actifs après déconnexion
+#    Les conteneurs Docker ne sont pas affectés (tournent sous dockerd)
+# ----------------------------------------------------------
+sudo sed -i 's/^#KillUserProcesses=no/KillUserProcesses=yes/' /etc/systemd/logind.conf
+sudo systemctl restart systemd-logind
+
+# Limiter le nombre de processus par utilisateur
+echo "$USER soft nproc 4096" | sudo tee -a /etc/security/limits.conf
+echo "$USER hard nproc 8192" | sudo tee -a /etc/security/limits.conf
+
+# ----------------------------------------------------------
 # 7. Vérification
 # ----------------------------------------------------------
 ls -la /opt/
