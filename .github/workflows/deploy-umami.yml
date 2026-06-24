@@ -1,0 +1,71 @@
+name: Deploy Umami
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "umami/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.UMAMI_DB_PASSWORD }}" ]  && missing+=("secret: UMAMI_DB_PASSWORD")
+          [ -z "${{ secrets.UMAMI_APP_SECRET }}" ]   && missing+=("secret: UMAMI_APP_SECRET")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Manquants :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env
+        run: |
+          cat > /tmp/umami.env << 'EOF'
+          UMAMI_DB_PASSWORD=${{ secrets.UMAMI_DB_PASSWORD }}
+          UMAMI_APP_SECRET=${{ secrets.UMAMI_APP_SECRET }}
+          EOF
+
+      - name: Sync umami/ vers le VPS
+        run: |
+          rsync -avz --delete --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            umami/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/umami/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/umami.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/umami/.env
+          rm -f /tmp/umami.env
+
+      - name: Démarrer Umami
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            chmod 600 /opt/azteas-panel/umami/.env
+            mkdir -p /opt/azteas-panel/umami/db-data
+            cd /opt/azteas-panel/umami
+            docker compose pull
+            docker compose up -d
+            docker compose ps
