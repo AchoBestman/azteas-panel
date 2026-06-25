@@ -23,6 +23,7 @@ entryPoints:
 
 
 certificatesResolvers:
+  # Pour azteas.com et sous-domaines (Cloudflare DNS)
   letsencrypt:
     acme:
       email: "admin@azteas.com"
@@ -32,6 +33,13 @@ certificatesResolvers:
         resolvers:
           - "1.1.1.1:53"
           - "8.8.8.8:53"
+  # Pour les autres domaines (Hostinger, etc.) — HTTP challenge
+  letsencrypt-http:
+    acme:
+      email: "admin@azteas.com"
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
 
 providers:
   docker:
