@@ -1,7 +1,11 @@
 name: Deploy Redis
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "redis/**"
 
 jobs:
   deploy:
