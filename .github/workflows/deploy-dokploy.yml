@@ -28,6 +28,7 @@ jobs:
         run: |
           missing=()
           [ -z "${{ secrets.DOKPLOY_DB_PASSWORD }}" ] && missing+=("secret: DOKPLOY_DB_PASSWORD")
+          [ -z "${{ secrets.REDIS_PASSWORD }}" ]       && missing+=("secret: REDIS_PASSWORD")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "❌ Manquants :"
             for m in "${missing[@]}"; do echo "   - $m"; done
@@ -39,6 +40,7 @@ jobs:
         run: |
           cat > /tmp/dokploy.env << 'EOF'
           DOKPLOY_DB_PASSWORD=${{ secrets.DOKPLOY_DB_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           EOF
 
       - name: Sync dokploy/ vers le VPS
