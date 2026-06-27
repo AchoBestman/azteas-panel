@@ -1,15 +1,11 @@
 services:
-
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
     container_name: umami
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://umami:${UMAMI_DB_PASSWORD}@umami-db:5432/umami
+      - DATABASE_URL=postgresql://umami:${UMAMI_DB_PASSWORD}@postgresql:5432/umami
       - APP_SECRET=${UMAMI_APP_SECRET}
-    depends_on:
-      umami-db:
-        condition: service_healthy
     labels:
       - traefik.enable=true
       - traefik.docker.network=azteas-net
@@ -20,30 +16,9 @@ services:
       - traefik.http.routers.umami.middlewares=rate-limit@file
       - traefik.http.services.umami-svc.loadbalancer.server.port=3000
     networks:
-      - umami_net
       - azteas-net
 
-  umami-db:
-    image: pgvector/pgvector:pg17
-    container_name: umami-db
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=umami
-      - POSTGRES_USER=umami
-      - POSTGRES_PASSWORD=${UMAMI_DB_PASSWORD}
-    volumes:
-      - /opt/azteas-panel/umami/db-data:/var/lib/postgresql/data
-    networks:
-      - umami_net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U umami"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 networks:
-  umami_net:
-    driver: bridge
   azteas-net:
     external: true
     name: azteas-net

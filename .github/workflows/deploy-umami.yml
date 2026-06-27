@@ -64,7 +64,6 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
             chmod 600 /opt/azteas-panel/umami/.env
-            mkdir -p /opt/azteas-panel/umami/db-data
             cd /opt/azteas-panel/umami
             docker compose pull
             docker compose up -d

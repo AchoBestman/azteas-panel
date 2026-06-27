@@ -31,8 +31,20 @@ http:
         average: 50
         burst: 20
 
-    # Rate limiting strict pour interfaces admin (pgAdmin, phpMyAdmin, dashboard, etc. 10 req/s, pic 5)
+    # Rate limiting strict pour interfaces admin (dashboard Traefik, etc.)
     rate-limit-admin:
       rateLimit:
         average: 10
         burst: 5
+
+    # Rate limiting pour pgAdmin (charge beaucoup de ressources statiques au démarrage)
+    rate-limit-pgadmin:
+      rateLimit:
+        average: 50
+        burst: 100
+
+    # Rate limiting pour grafana (charge beaucoup de ressources statiques au démarrage)
+    rate-limit-grafana:
+      rateLimit:
+        average: 50
+        burst: 100

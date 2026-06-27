@@ -4,12 +4,13 @@ services:
     container_name: redis
     restart: unless-stopped
     environment:
-      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes --databases 16 --maxmemory 512mb --maxmemory-policy allkeys-lru
+      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes --databases 16 --maxmemory 1000mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
       - redis_net
       - coolify
+      - azteas-net
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
       interval: 10s

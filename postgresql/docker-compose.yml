@@ -7,11 +7,14 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB:-postgres}
+    ports:
+      - "${FORWARD_DB_PORT:-5433}:5432"
     volumes:
       - postgresql_data:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
     networks:
       - postgresql_net
+      - azteas-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -39,7 +42,7 @@ services:
       - traefik.http.routers.pgadmin.rule=Host(`pgadmin.azteas.com`)
       - traefik.http.routers.pgadmin.tls=true
       - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
-      - traefik.http.routers.pgadmin.middlewares=secure-headers@file,rate-limit-admin@file
+      - traefik.http.routers.pgadmin.middlewares=secure-headers@file,rate-limit-pgadmin@file
       - traefik.http.services.pgadmin-svc.loadbalancer.server.port=80
     networks:
       - postgresql_net
