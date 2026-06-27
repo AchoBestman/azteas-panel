@@ -7,7 +7,7 @@ services:
       - DISABLE_TRAEFIK=true
       - DATABASE_URL=postgresql://dokploy:${DOKPLOY_DB_PASSWORD}@postgresql:5432/dokploy
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      - REDIS_HOST=redis
+      - REDIS_HOST=redis://:${REDIS_PASSWORD}@redis:6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
     volumes:
