@@ -96,6 +96,11 @@ services:
       - REDIS_HOST=coolify-redis
       - REDIS_PASSWORD=${COOLIFY_REDIS_PASSWORD}
       - QUEUE_CONNECTION=redis
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - coolify_data:/var/www/html/storage
