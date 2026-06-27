@@ -6,13 +6,13 @@ services:
     environment:
       - DISABLE_TRAEFIK=true
       - DATABASE_URL=postgresql://dokploy:${DOKPLOY_DB_PASSWORD}@postgresql:5432/dokploy
-      #- REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      #- REDIS_HOST=redis
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - dokploy-data:/etc/dokploy
+    depends_on:
+      dokploy-redis:
+        condition: service_healthy
     labels:
       - traefik.enable=true
       - traefik.docker.network=azteas-net
@@ -23,12 +23,30 @@ services:
       - traefik.http.routers.dokploy.middlewares=secure-headers@file,rate-limit@file
       - traefik.http.services.dokploy-svc.loadbalancer.server.port=3000
     networks:
+      - dokploy-net
       - azteas-net
 
+  dokploy-redis:
+    image: redis:7.4.6-alpine
+    container_name: dokploy-redis
+    restart: unless-stopped
+    volumes:
+      - dokploy-redis-data:/data
+    networks:
+      - dokploy-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
+  dokploy-net:
+    driver: bridge
   azteas-net:
     external: true
     name: azteas-net
 
 volumes:
   dokploy-data: {}
+  dokploy-redis-data: {}

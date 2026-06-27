@@ -28,7 +28,6 @@ jobs:
         run: |
           missing=()
           [ -z "${{ secrets.DOKPLOY_DB_PASSWORD }}" ]  && missing+=("secret: DOKPLOY_DB_PASSWORD")
-          [ -z "${{ secrets.REDIS_PASSWORD }}" ]        && missing+=("secret: REDIS_PASSWORD")
           [ -z "${{ secrets.BETTER_AUTH_SECRET }}" ]    && missing+=("secret: BETTER_AUTH_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "❌ Manquants :"
@@ -41,7 +40,6 @@ jobs:
         run: |
           cat > /tmp/dokploy.env << 'EOF'
           DOKPLOY_DB_PASSWORD=${{ secrets.DOKPLOY_DB_PASSWORD }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
           EOF
 
