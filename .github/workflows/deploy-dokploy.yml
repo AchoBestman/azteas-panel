@@ -27,8 +27,9 @@ jobs:
       - name: Valider les variables et secrets requis
         run: |
           missing=()
-          [ -z "${{ secrets.DOKPLOY_DB_PASSWORD }}" ] && missing+=("secret: DOKPLOY_DB_PASSWORD")
-          [ -z "${{ secrets.REDIS_PASSWORD }}" ]       && missing+=("secret: REDIS_PASSWORD")
+          [ -z "${{ secrets.DOKPLOY_DB_PASSWORD }}" ]  && missing+=("secret: DOKPLOY_DB_PASSWORD")
+          [ -z "${{ secrets.REDIS_PASSWORD }}" ]        && missing+=("secret: REDIS_PASSWORD")
+          [ -z "${{ secrets.BETTER_AUTH_SECRET }}" ]    && missing+=("secret: BETTER_AUTH_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "❌ Manquants :"
             for m in "${missing[@]}"; do echo "   - $m"; done
@@ -41,6 +42,7 @@ jobs:
           cat > /tmp/dokploy.env << 'EOF'
           DOKPLOY_DB_PASSWORD=${{ secrets.DOKPLOY_DB_PASSWORD }}
           REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
           EOF
 
       - name: Sync dokploy/ vers le VPS
