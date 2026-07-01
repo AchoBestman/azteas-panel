@@ -124,9 +124,9 @@ jobs:
 
               # Active le mode debug SOGo pour que le thème Angular Material soit calculé
               # côté client (nécessaire pour l'extraction Playwright qui suit).
-              if grep -q "^\s*//\s*SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf; then
-                sed -i 's|//\s*SOGoUIxDebugEnabled = YES;|SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
-              fi
+              # \s n'existe pas en BRE/ERE (grep/sed) sans -P : on utilise [[:space:]].
+              sed -i 's|^\([[:space:]]*\)//\([[:space:]]*SOGoUIxDebugEnabled = YES;\)|\1\2|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+              grep -n "SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
 
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
               if docker network ls | grep -q mailcowdockerized_mailcow-network; then
@@ -138,8 +138,19 @@ jobs:
               fi
             fi
 
-      - name: Attendre que SOGo redémarre en mode debug
-        run: sleep 20
+      - name: Attendre que SOGo réponde en mode debug
+        run: |
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ vars.MAILCOW_HOSTNAME }}/SOGo/")
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              echo "SOGo répond (HTTP $code)"
+              exit 0
+            fi
+            echo "Tentative $i : SOGo pas encore prêt (HTTP $code), attente 5s..."
+            sleep 5
+          done
+          echo "❌ SOGo n'a pas répondu après 2 minutes"
+          exit 1
 
       - name: Installer Node.js
         uses: actions/setup-node@v4
@@ -176,6 +187,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
-            sed -i 's|^\(\s*\)SOGoUIxDebugEnabled = YES;|\1//SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+            sed -i 's|^\([[:space:]]*\)SOGoUIxDebugEnabled = YES;|\1//SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+            grep -n "SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
             cd /opt/mailcow-dockerized
             docker compose restart sogo-mailcow
