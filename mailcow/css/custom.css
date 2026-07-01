@@ -67,24 +67,26 @@ input[type="submit"]:hover {
    "card-header d-flex align-items-center fs-5" sur les widgets du dashboard —
    ces deux cas ne doivent pas être affectés.
    Le texte est un nœud brut sans balise propre : on annule la taille de
-   police du conteneur puis on la restaure sur l'icône (texte injecté via
-   ::after) et sur les autres enfants directs (toggle dark mode, langue). */
+   police du conteneur, on masque l'icône bi-person-fill, et on injecte
+   le libellé fixe via ::before sur le conteneur (un ::after sur l'icône ne
+   s'afficherait pas puisque l'icône elle-même est masquée) ; la taille de
+   police est restaurée sur les autres enfants directs (toggle dark mode,
+   langue). */
 
 .card-header.d-flex.align-items-center.text-break {
   font-size: 0;
 }
 
 .card-header.d-flex.align-items-center.text-break > i.bi-person-fill {
-  font-size: 1rem;
+  display: none;
 }
 
-.card-header.d-flex.align-items-center.text-break > i.bi-person-fill::after {
+.card-header.d-flex.align-items-center.text-break::before {
   content: "AZTEAS WEBMAIL";
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  margin-left: 0.5rem;
 }
 
 .card-header.d-flex.align-items-center.text-break > div {
