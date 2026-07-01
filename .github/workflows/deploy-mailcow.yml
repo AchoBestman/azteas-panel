@@ -100,6 +100,9 @@ jobs:
             if [ -d /opt/mailcow-dockerized ]; then
               cp /opt/azteas-panel/mailcow/docker-compose.override.yml /opt/mailcow-dockerized/docker-compose.override.yml
               mkdir -p /opt/mailcow-dockerized/data/web/css/build
+              # Le placeholder par défaut appartient à root (créé par le setup initial de mailcow) :
+              # rm avant cp car l'utilisateur de déploiement n'a pas les droits d'écriture sur ce fichier root.
+              rm -f /opt/mailcow-dockerized/data/web/css/build/0081-custom-mailcow.css
               cp /opt/azteas-panel/mailcow/css/custom.css /opt/mailcow-dockerized/data/web/css/build/0081-custom-mailcow.css
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
               if docker network ls | grep -q mailcowdockerized_mailcow-network; then
