@@ -106,14 +106,26 @@ jobs:
               cp /opt/azteas-panel/mailcow/css/custom.css /opt/mailcow-dockerized/data/web/css/build/0081-custom-mailcow.css
 
               # Thème SOGo (palette Azteas). custom-theme.js est déjà monté par défaut
-              # par mailcow (docker-compose.yml de base) ; custom-theme.css est monté
-              # via notre docker-compose.override.yml une fois généré.
+              # par mailcow (docker-compose.yml de base) ; custom-theme.css (compilé) est
+              # généré automatiquement par l'étape Playwright ci-dessous, jamais commité.
               mkdir -p /opt/mailcow-dockerized/data/conf/sogo
               rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
               cp /opt/azteas-panel/mailcow/sogo/custom-theme.js /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
-              if [ -f /opt/azteas-panel/mailcow/sogo/custom-theme.css ]; then
-                rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
-                cp /opt/azteas-panel/mailcow/sogo/custom-theme.css /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
+
+              # Favicon Azteas (custom-favicon.ico est déjà monté par défaut par mailcow
+              # vers /usr/local/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico).
+              rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-favicon.ico
+              cp /opt/azteas-panel/mailcow/sogo/custom-favicon.ico /opt/mailcow-dockerized/data/conf/sogo/custom-favicon.ico
+
+              # Titre de l'onglet navigateur (remplace le "SOGo Groupware" par défaut).
+              # Ne prend effet que lorsque SOGoUIxDebugEnabled = No (donc une fois le
+              # mode debug redésactivé en fin de déploiement, voir plus bas).
+              sed -i 's|SOGoPageTitle = "[^"]*";|SOGoPageTitle = "AZTEAS WEBMAIL";|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+
+              # Active le mode debug SOGo pour que le thème Angular Material soit calculé
+              # côté client (nécessaire pour l'extraction Playwright qui suit).
+              if grep -q "^\s*//\s*SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf; then
+                sed -i 's|//\s*SOGoUIxDebugEnabled = YES;|SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
               fi
 
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
@@ -125,3 +137,45 @@ jobs:
                 echo "Mailcow pas encore démarré — lancer manuellement : cd /opt/mailcow-dockerized && docker compose up -d"
               fi
             fi
+
+      - name: Attendre que SOGo redémarre en mode debug
+        run: sleep 20
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installer Playwright
+        run: |
+          cd mailcow/sogo/theme-extract
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Extraire le thème SOGo compilé (Playwright)
+        run: |
+          cd mailcow/sogo/theme-extract
+          node extract.mjs
+        env:
+          SOGO_URL: https://${{ vars.MAILCOW_HOSTNAME }}/SOGo/
+          OUTPUT_PATH: /tmp/custom-theme.css
+
+      - name: Déployer le thème SOGo généré
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/custom-theme.css \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
+          rm -f /tmp/custom-theme.css
+
+      - name: Désactiver le mode debug SOGo
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            sed -i 's|^\(\s*\)SOGoUIxDebugEnabled = YES;|\1//SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+            cd /opt/mailcow-dockerized
+            docker compose restart sogo-mailcow

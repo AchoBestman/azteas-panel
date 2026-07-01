@@ -1,0 +1,9 @@
+{
+  "name": "sogo-theme-extract",
+  "private": true,
+  "type": "module",
+  "description": "Extracts the compiled Angular Material CSS for the Azteas SOGo theme via a headless browser, so custom-theme.css never has to be captured by hand.",
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}

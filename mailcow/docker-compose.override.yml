@@ -20,6 +20,17 @@ services:
       - traefik.http.routers.mailcow.service=mailcow-svc
       - traefik.http.routers.mailcow.middlewares=secure-headers@file,rate-limit@file
 
+      # Bloque /user : seuls les admins doivent accéder à l'interface Mailcow
+      # (via /admin) ; les mailbox users n'utilisent que le webmail (SOGo).
+      # Priorité plus haute que la route "mailcow" pour matcher en premier.
+      - traefik.http.routers.mailcow-block-user.entrypoints=websecure
+      - traefik.http.routers.mailcow-block-user.rule=Host(`mail.azteas.com`) && PathPrefix(`/user`)
+      - traefik.http.routers.mailcow-block-user.tls=true
+      - traefik.http.routers.mailcow-block-user.tls.certresolver=letsencrypt
+      - traefik.http.routers.mailcow-block-user.service=mailcow-svc
+      - traefik.http.routers.mailcow-block-user.priority=100
+      - traefik.http.routers.mailcow-block-user.middlewares=deny-all@file
+
       # Route autoconfig
       - traefik.http.routers.mailcow-autoconfig.entrypoints=websecure
       - traefik.http.routers.mailcow-autoconfig.rule=Host(`autoconfig.azteas.com`) && Path(`/mail/config-v1.1.xml`)
@@ -42,6 +53,13 @@ services:
         aliases:
           - nginx
       azteas-net:
+
+  sogo-mailcow:
+    # custom-theme.js est déjà monté par défaut par mailcow (docker-compose.yml de base).
+    # custom-theme.css est le CSS Angular Material compilé (palette Azteas), extrait via
+    # le mode debug SOGo puis sauvegardé directement sur le VPS (voir mailcow/sogo/custom-theme.js).
+    volumes:
+      - ./data/conf/sogo/custom-theme.css:/usr/local/lib/GNUstep/SOGo/WebServerResources/css/theme-default.css:z
 
   certdumper:
     image: ghcr.io/kereis/traefik-certs-dumper:latest

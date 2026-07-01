@@ -123,3 +123,12 @@ input[type="submit"]:hover {
 .d-flex.flex-column.align-items-center:has(#fido2-login) {
   display: none;
 }
+
+/* Masque le lien "Préférences" (/user) dans la barre de navigation — l'accès
+   est de toute façon bloqué côté serveur par Traefik (middleware deny-all sur
+   Host(mail.azteas.com) && PathPrefix(/user)), ceci évite juste d'afficher un
+   lien vers une page inaccessible. Seuls les admins doivent utiliser
+   l'interface Mailcow, via /admin. */
+a[href="/user"] {
+  display: none;
+}
