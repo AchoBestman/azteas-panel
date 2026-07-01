@@ -73,7 +73,7 @@ input[type="submit"]:hover {
   font-size: 1rem;
 }
 
-.card-header > i.bi-person-fill::after {
+/* .card-header > i.bi-person-fill::after {
   content: "AZTEAS WEBMAIL";
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 1rem;
@@ -84,7 +84,7 @@ input[type="submit"]:hover {
 
 .card-header > div {
   font-size: 1rem;
-}
+} */
 
 /* Authentification username/password uniquement : masque le séparateur
    "or login with" et le bouton FIDO2/WebAuthn. */
