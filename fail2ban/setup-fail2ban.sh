@@ -44,6 +44,10 @@ sudo rm -f /etc/fail2ban/jail.d/piler.local
 echo "    Copie des filtres..."
 sudo cp "$FAIL2BAN_DIR/filter.d/"*.conf /etc/fail2ban/filter.d/
 
+# Copier la config globale du démon (dbpurgeage, requis par bantime.increment)
+echo "    Copie de fail2ban.local..."
+sudo cp "$FAIL2BAN_DIR/fail2ban.local" /etc/fail2ban/fail2ban.local
+
 # Générer le jail depuis le template
 echo "    Génération du jail..."
 sed \

@@ -1,0 +1,18 @@
+# Surcharge de la config globale du démon (pas une jail — s'applique à
+# /etc/fail2ban/fail2ban.local, distinct de jail.d/azteas.local).
+#
+# dbpurgeage : durée pendant laquelle fail2ban conserve l'historique des bans
+# en base (table `bans`), utilisé par bantime.increment (voir jail.d) pour
+# calculer le palier d'escalade (15min/30min/1h/24h/30j).
+#
+# Par défaut fail2ban ne garde que 1 jour (86400s) — beaucoup trop court pour
+# notre échelle qui monte jusqu'à 30 jours : l'historique serait purgé avant
+# même d'atteindre les paliers élevés, et l'escalade ne dépasserait jamais
+# le palier "1h" en pratique.
+#
+# 45 jours = marge confortable au-dessus du palier max (30j) pour laisser le
+# temps à un récidiviste de retenter après son ban le plus long, tout en
+# "oubliant" un ancien contrevenant resté sage pendant plus d'un mois et demi
+# (il repart alors au palier 1 : 15min).
+[Definition]
+dbpurgeage = 45d
