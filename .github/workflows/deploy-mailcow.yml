@@ -112,6 +112,16 @@ jobs:
               rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
               cp /opt/azteas-panel/mailcow/sogo/custom-theme.js /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
 
+              # custom-theme.css est bind-mounté par docker-compose.override.yml mais n'est
+              # généré (par Playwright) qu'après ce redémarrage. Si le fichier n'existe pas
+              # encore, Docker crée un DOSSIER vide à sa place pour satisfaire le mount, ce
+              # qui bloque définitivement le conteneur (erreur "not a directory" à chaque
+              # démarrage suivant). On garantit donc qu'un fichier (même vide) existe déjà.
+              if [ -d /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css ]; then
+                rmdir /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
+              fi
+              [ -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css ] || touch /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
+
               # Favicon Azteas (custom-favicon.ico est déjà monté par défaut par mailcow
               # vers /usr/local/lib/GNUstep/SOGo/WebServerResources/img/sogo.ico).
               rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-favicon.ico
