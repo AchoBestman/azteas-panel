@@ -4,6 +4,17 @@ sender    = ${SMTP_FROM}
 mta       = mail
 action    = %(action_mwl)s
 
+# Ban progressif : 15min -> 30min -> 1h -> 24h -> 30j -> (recidive) permanent.
+# Le multiplicateur s'applique au bantime de base (15m) à chaque nouveau ban
+# de la même IP sur la même jail : x1, x2, x4, x96, x2880.
+# Le compteur ne se réinitialise pas avec le temps (base sqlite de fail2ban) ;
+# désactivé explicitement sur sshd et recidive, qui gardent leur propre logique.
+bantime            = 15m
+bantime.increment  = true
+bantime.multipliers = 1 2 4 96 2880
+bantime.maxtime    = 30d
+bantime.overalljails = false
+
 # ============================================================
 # JAIL 1 - Login web Piler
 # ============================================================
@@ -11,10 +22,10 @@ action    = %(action_mwl)s
 enabled   = true
 filter    = piler-weblogin
 logpath   = /var/log/traefik/access.log
-banaction = %(banaction_allports)s
+port      = http,https
+banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
-bantime   = 3600
 
 # ============================================================
 # JAIL 2 - Login web Mailcow
@@ -23,10 +34,10 @@ bantime   = 3600
 enabled   = true
 filter    = mailcow-weblogin
 logpath   = /var/log/traefik/access.log
-banaction = %(banaction_allports)s
+port      = http,https
+banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
-bantime   = 3600
 
 # ============================================================
 # JAIL 3 - Dashboard Traefik (auth basique)
@@ -35,10 +46,10 @@ bantime   = 3600
 enabled   = true
 filter    = traefik-auth
 logpath   = /var/log/traefik/access.log
-banaction = %(banaction_allports)s
+port      = http,https
+banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
-bantime   = 3600
 
 # ============================================================
 # JAIL 4 - Dashboard Grafana
@@ -47,10 +58,10 @@ bantime   = 3600
 enabled   = true
 filter    = grafana-auth
 logpath   = /var/log/traefik/access.log
-banaction = %(banaction_allports)s
+port      = http,https
+banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
-bantime   = 3600
 
 # ============================================================
 # JAIL 5 - Coolify
@@ -59,10 +70,10 @@ bantime   = 3600
 enabled   = true
 filter    = coolify-auth
 logpath   = /var/log/traefik/access.log
-banaction = %(banaction_allports)s
+port      = http,https
+banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
-bantime   = 3600
 
 # ============================================================
 # JAIL 6 - Fail2ban UI
@@ -71,29 +82,33 @@ bantime   = 3600
 enabled   = true
 filter    = fail2ban-ui-auth
 logpath   = /var/log/traefik/access.log
-banaction = %(banaction_allports)s
+port      = http,https
+banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
-bantime   = 3600
 
 # ============================================================
-# JAIL 7 - SSH
+# JAIL 7 - SSH (ban plat sur tous les ports, pas d'escalade)
 # ============================================================
 [sshd]
-enabled   = true
-banaction = %(banaction_allports)s
-maxretry  = 3
-findtime  = 600
-bantime   = 86400
+enabled            = true
+banaction          = %(banaction_allports)s
+maxretry           = 3
+findtime           = 600
+bantime            = 86400
+bantime.increment  = false
 
 # ============================================================
-# JAIL 8 - Récidivistes : banni définitivement après 2 bans
+# JAIL 8 - Récidivistes : banni définitivement après 5 bans
+# (couvre l'échelon "30 jours" de l'escalade ci-dessus, insiste sur une
+# même jail OU cumule des bans sur plusieurs jails différentes)
 # ============================================================
 [recidive]
-enabled   = true
-filter    = recidive
-logpath   = /var/log/fail2ban.log
-banaction = %(banaction_allports)s
-bantime   = -1
-findtime  = 86400
-maxretry  = 2
+enabled            = true
+filter             = recidive
+logpath            = /var/log/fail2ban.log
+banaction          = %(banaction_allports)s
+bantime            = -1
+bantime.increment  = false
+findtime           = 60d
+maxretry           = 5
