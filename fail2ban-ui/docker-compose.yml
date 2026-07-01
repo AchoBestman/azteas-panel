@@ -6,7 +6,7 @@ services:
     # Publié uniquement sur le loopback de l'hôte : fail2ban (qui tourne sur
     # l'hôte, cf. ../fail2ban) en a besoin pour envoyer ses callbacks de
     # ban/unban à l'UI. Jamais exposé publiquement — Traefik route via le
-    # réseau Docker azteas-net comme les autres services.
+    # réseau Docker azteas-net comme les autres services
     ports:
       - "127.0.0.1:8080:8080"
     environment:
