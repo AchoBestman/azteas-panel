@@ -1,0 +1,101 @@
+/* Azteas branding overrides for the Mailcow login/UI (custom-mailcow.css) */
+
+:root {
+  --azteas-primary: #140066;
+  --azteas-primary-dark: #0a0033;
+  --azteas-primary-light: #4f46e5;
+  --azteas-gradient: linear-gradient(135deg, #1a0080 0%, #0a0033 100%);
+  --azteas-radius: 0.625rem;
+}
+
+body {
+  background: var(--azteas-gradient);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.card {
+  border: none;
+  border-radius: var(--azteas-radius);
+  box-shadow: 0 20px 60px -15px rgba(20, 0, 102, 0.35);
+  overflow: hidden;
+}
+
+.card-header {
+  background: var(--azteas-gradient);
+  color: #fff;
+  border-bottom: none;
+}
+
+.card-header i {
+  color: #fff;
+}
+
+a {
+  color: var(--azteas-primary);
+}
+
+a:hover {
+  color: var(--azteas-primary-light);
+}
+
+.btn-primary,
+input[type="submit"] {
+  background: var(--azteas-primary);
+  border-color: var(--azteas-primary);
+  border-radius: var(--azteas-radius);
+}
+
+.btn-primary:hover,
+input[type="submit"]:hover {
+  background: var(--azteas-primary-light);
+  border-color: var(--azteas-primary-light);
+}
+
+.form-control:focus {
+  border-color: var(--azteas-primary-light);
+  box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--azteas-primary);
+  border-color: var(--azteas-primary);
+}
+
+/* Remplace le texte dynamique "User Login" par un libellé fixe.
+   Le texte est un nœud brut sans balise propre : on annule la taille de
+   police du conteneur puis on la restaure sur l'icône (texte injecté via
+   ::after) et sur les autres enfants directs (toggle dark mode, langue). */
+.card-header {
+  font-size: 0;
+}
+
+.card-header > i.bi-person-fill {
+  font-size: 1rem;
+}
+
+.card-header > i.bi-person-fill::after {
+  content: "AZTEAS WEBMAIL";
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-left: 0.5rem;
+}
+
+.card-header > div {
+  font-size: 1rem;
+}
+
+/* Authentification username/password uniquement : masque le séparateur
+   "or login with" et le bouton FIDO2/WebAuthn. */
+.hr-title {
+  display: none;
+}
+
+#fido2-login {
+  display: none;
+}
+
+.d-flex.flex-column.align-items-center:has(#fido2-login) {
+  display: none;
+}

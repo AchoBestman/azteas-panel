@@ -99,6 +99,8 @@ jobs:
 
             if [ -d /opt/mailcow-dockerized ]; then
               cp /opt/azteas-panel/mailcow/docker-compose.override.yml /opt/mailcow-dockerized/docker-compose.override.yml
+              mkdir -p /opt/mailcow-dockerized/data/web/css/build
+              cp /opt/azteas-panel/mailcow/css/custom.css /opt/mailcow-dockerized/data/web/css/build/0081-custom-mailcow.css
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
               if docker network ls | grep -q mailcowdockerized_mailcow-network; then
                 cd /opt/mailcow-dockerized
