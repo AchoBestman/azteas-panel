@@ -77,9 +77,8 @@ if [ "$CONFIGURE_CREDENTIALS" = true ]; then
     fi
 
     HASHED=$(htpasswd -nbB "$DASHBOARD_USER" "$DASHBOARD_PASSWORD")
-    HASHED_ESCAPED=$(echo "$HASHED" | sed 's/\$/\$\$/g')
 
-    # 3. Créer le .htpasswd pour Traefik (sans échappement)
+    # 3. Créer le .htpasswd pour Traefik
     echo "$HASHED" > "${TRAEFIK_DIR}/dynamic/.htpasswd"
     chmod 600 "${TRAEFIK_DIR}/dynamic/.htpasswd"
     echo "    .htpasswd créé"
@@ -91,11 +90,20 @@ if [ "$CONFIGURE_CREDENTIALS" = true ]; then
     # 5. Créer le .env
     cat > "${TRAEFIK_DIR}/.env" << EOF
 ACME_EMAIL=admin@azteas.com
-TRAEFIK_DASHBOARD_AUTH=${HASHED_ESCAPED}
+TRAEFIK_DASHBOARD_AUTH=${HASHED}
 CF_DNS_API_TOKEN=${CF_TOKEN}
 EOF
     chmod 600 "${TRAEFIK_DIR}/.env"
     echo "    .env créé"
+
+    echo ""
+    echo "    ⚠️  Ce script ne s'exécute qu'une fois, localement sur le VPS."
+    echo "    Pour que le déploiement automatique (GitHub Actions) régénère"
+    echo "    dynamic/.htpasswd à chaque push, copier cette ligne (brute, sans"
+    echo "    échappement) dans le secret GitHub TRAEFIK_DASHBOARD_AUTH :"
+    echo ""
+    echo "    ${HASHED}"
+    echo ""
 fi
 
 echo ""

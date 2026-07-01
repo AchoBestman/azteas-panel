@@ -45,6 +45,14 @@ jobs:
           TRAEFIK_DASHBOARD_AUTH=${{ secrets.TRAEFIK_DASHBOARD_AUTH }}
           EOF
 
+      - name: Générer le .htpasswd
+        run: |
+          # Ligne htpasswd brute (non échappée), ex: admin:$2y$05$abc...
+          # Générée localement avec : htpasswd -nbB <user> <password>
+          cat > /tmp/.htpasswd << 'EOF'
+          ${{ secrets.TRAEFIK_DASHBOARD_AUTH }}
+          EOF
+
       - name: Sync traefik/ vers le VPS
         run: |
           rsync -avz --delete \
@@ -55,13 +63,17 @@ jobs:
             traefik/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/traefik/
 
-      - name: Déployer le .env et redémarrer Traefik
+      - name: Déployer le .env et le .htpasswd
         run: |
           rsync -avz \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
             /tmp/traefik.env \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/traefik/.env
-          rm -f /tmp/traefik.env
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/.htpasswd \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/traefik/dynamic/.htpasswd
+          rm -f /tmp/traefik.env /tmp/.htpasswd
 
       - name: Redémarrer Traefik
         uses: appleboy/ssh-action@v1
@@ -72,6 +84,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
             chmod 600 /opt/azteas-panel/traefik/.env
+            chmod 600 /opt/azteas-panel/traefik/dynamic/.htpasswd
             cd /opt/azteas-panel/traefik
             docker compose pull
             docker compose up -d

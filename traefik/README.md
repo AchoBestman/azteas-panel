@@ -65,13 +65,24 @@ Accès dashboard : https://traefik.azteas.com (user/password définis dans setup
 
 ## Déploiement automatique
 
-Tout push sur `main` modifiant `traefik/**` déclenche la GitHub Action.
+Tout push sur `main` modifiant `traefik/**` déclenche la GitHub Action, qui régénère et
+redéploie `.env` **et** `dynamic/.htpasswd` à chaque exécution — plus besoin de relancer
+`setup.sh` sur le VPS après le tout premier déploiement.
 
 Secrets GitHub requis (Settings → Secrets → Actions) :
 - `VPS_HOST`
 - `VPS_PORT`
 - `VPS_USER`
 - `VPS_SSH_PRIVATE_KEY`
+- `CF_DNS_API_TOKEN`
+- `TRAEFIK_DASHBOARD_AUTH` — ligne htpasswd **brute, non échappée** (ex.
+  `admin:$2y$05$abcdefghijklmnopqrstuv...`), générée via
+  `htpasswd -nbB <user> <password>` ou affichée par `setup.sh` en fin d'exécution.
+  Utilisée pour le dashboard Traefik et tous les services derrière `auth-basic@file`
+  (ex. fail2ban-ui).
+
+Variable GitHub requise :
+- `ACME_EMAIL`
 
 ## Réseau partagé
 
