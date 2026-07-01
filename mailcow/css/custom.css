@@ -65,9 +65,9 @@ input[type="submit"]:hover {
    Le texte est un nœud brut sans balise propre : on annule la taille de
    police du conteneur puis on la restaure sur l'icône (texte injecté via
    ::after) et sur les autres enfants directs (toggle dark mode, langue). */
-.card-header {
+/* .card-header {
   font-size: 0;
-}
+} */
 
 .card-header > i.bi-person-fill {
   font-size: 1rem;
