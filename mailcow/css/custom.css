@@ -9,7 +9,6 @@
 }
 
 body {
-  /* background: var(--azteas-gradient); */
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -17,7 +16,6 @@ body {
   border: none;
   border-radius: var(--azteas-radius);
   box-shadow: 0 20px 60px -15px rgba(20, 0, 102, 0.35);
-  /* overflow: hidden; */
 }
 
 .card-header {
@@ -65,15 +63,12 @@ input[type="submit"]:hover {
    Le texte est un nœud brut sans balise propre : on annule la taille de
    police du conteneur puis on la restaure sur l'icône (texte injecté via
    ::after) et sur les autres enfants directs (toggle dark mode, langue). */
-/* .card-header {
-  font-size: 0;
-} */
 
 .card-header > i.bi-person-fill {
   font-size: 1rem;
 }
 
-/* .card-header > i.bi-person-fill::after {
+.card-header > i.bi-person-fill::after {
   content: "AZTEAS WEBMAIL";
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 1rem;
@@ -82,20 +77,16 @@ input[type="submit"]:hover {
   margin-left: 0.5rem;
 }
 
-.card-header > div {
-  font-size: 1rem;
-} */
-
 /* Authentification username/password uniquement : masque le séparateur
    "or login with" et le bouton FIDO2/WebAuthn. */
 /* .hr-title {
   display: none;
 } */
 
-/* #fido2-login {
+#fido2-login {
   display: none;
 }
 
 .d-flex.flex-column.align-items-center:has(#fido2-login) {
   display: none;
-} */
+}
