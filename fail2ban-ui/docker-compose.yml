@@ -43,7 +43,7 @@ services:
       - traefik.http.routers.fail2ban-ui.rule=Host(`fail2ban.azteas.com`)
       - traefik.http.routers.fail2ban-ui.tls=true
       - traefik.http.routers.fail2ban-ui.tls.certresolver=letsencrypt
-      - traefik.http.routers.fail2ban-ui.middlewares=auth-basic@file,secure-headers@file,rate-limit-admin@file
+      - traefik.http.routers.fail2ban-ui.middlewares=auth-basic@file,secure-headers@file,rate-limit-fail2ban-ui@file
       - traefik.http.services.fail2ban-ui-svc.loadbalancer.server.port=8080
     networks:
       - azteas-net

@@ -48,3 +48,9 @@ http:
       rateLimit:
         average: 50
         burst: 100
+
+    # Rate limiting pour fail2ban-ui (charge ~25 fichiers JS/CSS au démarrage)
+    rate-limit-fail2ban-ui:
+      rateLimit:
+        average: 50
+        burst: 100
