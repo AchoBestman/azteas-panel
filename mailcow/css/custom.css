@@ -49,6 +49,20 @@ input[type="submit"]:hover {
   border-color: var(--azteas-primary-light);
 }
 
+/* Bouton "Login" des 3 pages de login (vert par défaut via btn-success).
+   Sélecteur volontairement précis : .btn-success seul est aussi utilisé sur
+   reset-password.twig, qhandler.twig et dashboard.twig (bouton licence) —
+   ces boutons ne doivent pas changer de couleur. */
+.btn-success.w-100.mt-2.mx-auto {
+  background: var(--azteas-primary);
+  border-color: var(--azteas-primary);
+}
+
+.btn-success.w-100.mt-2.mx-auto:hover {
+  background: var(--azteas-primary-light);
+  border-color: var(--azteas-primary-light);
+}
+
 .form-control:focus {
   border-color: var(--azteas-primary-light);
   box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
