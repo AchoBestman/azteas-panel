@@ -65,7 +65,19 @@ findtime  = 600
 bantime   = 3600
 
 # ============================================================
-# JAIL 6 - SSH
+# JAIL 6 - Fail2ban UI
+# ============================================================
+[fail2ban-ui-auth]
+enabled   = true
+filter    = fail2ban-ui-auth
+logpath   = /var/log/traefik/access.log
+banaction = %(banaction_allports)s
+maxretry  = 3
+findtime  = 600
+bantime   = 3600
+
+# ============================================================
+# JAIL 7 - SSH
 # ============================================================
 [sshd]
 enabled   = true
@@ -75,7 +87,7 @@ findtime  = 600
 bantime   = 86400
 
 # ============================================================
-# JAIL 7 - Récidivistes : banni définitivement après 2 bans
+# JAIL 8 - Récidivistes : banni définitivement après 2 bans
 # ============================================================
 [recidive]
 enabled   = true

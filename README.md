@@ -125,3 +125,4 @@ Domaine principal : `azteas.com`
 | `traefik.azteas.com` | Dashboard Traefik (accès restreint) |
 | `db.azteas.com` | pgAdmin |
 | `mongo.azteas.com` | MongoExpress |
+| `f2b.azteas.com` | Fail2ban UI |

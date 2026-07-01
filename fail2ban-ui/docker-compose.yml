@@ -1,0 +1,35 @@
+services:
+  fail2ban-ui:
+    image: swissmakers/fail2ban-ui:latest
+    container_name: fail2ban-ui
+    restart: unless-stopped
+    # Requis par l'image pour piloter le fail2ban de l'hôte (socket local,
+    # espace de noms réseau partagé). Pas de réseau Docker "networks:" possible
+    # en mode host — le routage Traefik se fait via traefik/dynamic/fail2ban-ui.yml
+    network_mode: host
+    environment:
+      - PORT=${PORT:-8080}
+      # 0.0.0.0 est nécessaire pour que Traefik (conteneur séparé) atteigne l'UI
+      # via host.docker.internal. ⚠️ Le port doit être bloqué depuis l'extérieur
+      # par le firewall du VPS (voir README) puisque network_mode=host expose
+      # directement les interfaces de l'hôte, y compris l'IP publique.
+      - BIND_ADDRESS=${BIND_ADDRESS:-0.0.0.0}
+      - AUTODARK=${AUTODARK:-false}
+      - DISABLE_EXTERNAL_IP_LOOKUP=${DISABLE_EXTERNAL_IP_LOOKUP:-true}
+      - UPDATE_CHECK=${UPDATE_CHECK:-false}
+      # Callback interne : fail2ban tourne sur le même hôte (network_mode: host),
+      # le défaut http://127.0.0.1:${PORT} convient donc tel quel.
+      # - CALLBACK_URL=
+      # - CALLBACK_SECRET=
+    volumes:
+      # Base SQLite, réglages de l'appli, clés SSH générées par fail2ban-ui
+      - fail2ban_ui_config:/config:Z
+      # Lecture seule : test des logpath avant activation d'une jail
+      - /var/log:/var/log:ro
+      # Fail2ban tourne sur l'hôte (cf. ../fail2ban) : accès à sa config...
+      - /etc/fail2ban:/etc/fail2ban:Z
+      # ...et à son socket de contrôle
+      - /var/run/fail2ban:/var/run/fail2ban
+
+volumes:
+  fail2ban_ui_config:
