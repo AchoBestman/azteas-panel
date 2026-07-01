@@ -1,4 +1,4 @@
-// Azteas branding for SOGo (Angular Material theming).
+// Azteas branding for SOGo (Angular Material theming). 
 // Palette derived from the Azteas primary brand color #140066.
 angular.module('SOGo.Common').config(['$mdThemingProvider', function ($mdThemingProvider) {
 
