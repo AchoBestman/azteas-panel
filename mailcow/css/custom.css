@@ -20,7 +20,7 @@ body {
   overflow: hidden;
 }
 
-.card-header {
+/* .card-header {
   background: var(--azteas-gradient);
   color: #fff;
   border-bottom: none;
@@ -28,7 +28,7 @@ body {
 
 .card-header i {
   color: #fff;
-}
+} */
 
 a {
   color: var(--azteas-primary);
@@ -88,9 +88,9 @@ input[type="submit"]:hover {
 
 /* Authentification username/password uniquement : masque le séparateur
    "or login with" et le bouton FIDO2/WebAuthn. */
-/* .hr-title {
+.hr-title {
   display: none;
-} */
+}
 
 #fido2-login {
   display: none;
