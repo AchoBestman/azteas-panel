@@ -144,6 +144,11 @@ jobs:
               if docker network ls | grep -q mailcowdockerized_mailcow-network; then
                 cd /opt/mailcow-dockerized
                 docker compose up -d nginx-mailcow certdumper sogo-mailcow
+                # SOGo met en cache les bundles JS/CSS compilés dans Memcached ; sans ce
+                # redémarrage, le passage de SOGoUIxDebugEnabled à YES n'a aucun effet
+                # visible et l'étape Playwright suivante récupère une page sans le moindre
+                # <style md-theme-style>, d'où le "CSS looks empty (0 chars)".
+                docker compose restart memcached-mailcow
                 echo "Services mis à jour"
               else
                 echo "Mailcow pas encore démarré — lancer manuellement : cd /opt/mailcow-dockerized && docker compose up -d"
@@ -202,4 +207,6 @@ jobs:
             sed -i 's|^\([[:space:]]*\)SOGoUIxDebugEnabled = YES;|\1//SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
             grep -n "SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
             cd /opt/mailcow-dockerized
-            docker compose restart sogo-mailcow
+            # Idem : Memcached doit être redémarré pour que SOGo cesse de servir le
+            # bundle debug mis en cache et repasse sur le theme-default.css compilé.
+            docker compose restart memcached-mailcow sogo-mailcow
