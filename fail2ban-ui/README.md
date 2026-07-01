@@ -5,35 +5,25 @@ bannir/débannir une IP manuellement, gérer les jails/filtres, recevoir des not
 
 Image officielle [swissmakers/fail2ban-ui](https://github.com/swissmakers/fail2ban-ui).
 fail2ban tourne directement sur l'hôte (voir [`../fail2ban`](../fail2ban)), pas en conteneur —
-ce service s'y connecte localement via son socket de contrôle.
+ce service s'y connecte localement via son socket de contrôle, monté en volume.
 
-## Particularités de cette image
+Routé comme les autres services du repo : branché sur `azteas-net`, découvert par Traefik via
+labels Docker. Le seul écart est le port `8080` publié sur `127.0.0.1` de l'hôte — requis pour
+que fail2ban (process hôte) puisse envoyer ses callbacks de ban/unban à l'UI ; ce port n'est
+jamais exposé publiquement (bind explicite sur loopback).
 
-- **`network_mode: host` obligatoire** pour parler au fail2ban de l'hôte (socket local +
-  espace de noms réseau partagé). Impossible donc de la brancher sur `azteas-net` avec des
-  labels Traefik classiques : le routage se fait via
-  [`../traefik/dynamic/fail2ban-ui.yml`](../traefik/dynamic/fail2ban-ui.yml), qui pointe vers
-  `http://host.docker.internal:8080` (route ajoutée dans `traefik/docker-compose.yml` via
-  `extra_hosts: host-gateway`).
-- **Aucune authentification native sans OIDC.** Cette infra n'a pas de fournisseur OIDC
-  (Keycloak/Authentik/Pocket-ID) configuré — l'accès est donc protégé **uniquement** par
-  `auth-basic@file` de Traefik (mêmes identifiants que le dashboard Traefik). Ne jamais
-  déployer ce service sans cette protection.
-- **Port 8080 exposé sur toutes les interfaces de l'hôte** (conséquence du `network_mode: host`
-  + `BIND_ADDRESS=0.0.0.0`, nécessaire pour que Traefik puisse l'atteindre). **Le firewall du
-  VPS doit bloquer le port 8080 depuis l'extérieur** (seuls 80/443 doivent être publics) :
-  ```bash
-  sudo ufw deny 8080
-  ```
+## Authentification
+
+**Aucune authentification native sans OIDC.** Cette infra n'a pas de fournisseur OIDC
+(Keycloak/Authentik/Pocket-ID) configuré — l'accès est donc protégé **uniquement** par
+`auth-basic@file` de Traefik (mêmes identifiants que le dashboard Traefik). Ne jamais retirer
+ce middleware du router sans mettre en place une alternative.
 
 ## Prérequis sur le VPS
 
 - fail2ban déjà installé et actif (`fail2ban/setup-fail2ban.sh`)
-- Enregistrement DNS `f2b.azteas.com` → IP du VPS
+- Enregistrement DNS `fail2ban.azteas.com` → IP du VPS
 - `auth-basic@file` configuré (`.htpasswd` déployé par `traefik/setup.sh`)
-- Port 8080 bloqué depuis l'extérieur par le firewall (voir ci-dessus)
-- Traefik redéployé après le premier push (pour prendre en compte `extra_hosts` et le nouveau
-  fichier dynamic) — se fait automatiquement via `deploy-traefik.yml`
 
 ## Sécurité
 

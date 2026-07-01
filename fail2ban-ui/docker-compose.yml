@@ -3,33 +3,47 @@ services:
     image: swissmakers/fail2ban-ui:latest
     container_name: fail2ban-ui
     restart: unless-stopped
-    # Requis par l'image pour piloter le fail2ban de l'hôte (socket local,
-    # espace de noms réseau partagé). Pas de réseau Docker "networks:" possible
-    # en mode host — le routage Traefik se fait via traefik/dynamic/fail2ban-ui.yml
-    network_mode: host
+    # Publié uniquement sur le loopback de l'hôte : fail2ban (qui tourne sur
+    # l'hôte, cf. ../fail2ban) en a besoin pour envoyer ses callbacks de
+    # ban/unban à l'UI. Jamais exposé publiquement — Traefik route via le
+    # réseau Docker azteas-net comme les autres services.
+    ports:
+      - "127.0.0.1:8080:8080"
     environment:
-      - PORT=${PORT:-8080}
-      # 0.0.0.0 est nécessaire pour que Traefik (conteneur séparé) atteigne l'UI
-      # via host.docker.internal. ⚠️ Le port doit être bloqué depuis l'extérieur
-      # par le firewall du VPS (voir README) puisque network_mode=host expose
-      # directement les interfaces de l'hôte, y compris l'IP publique.
-      - BIND_ADDRESS=${BIND_ADDRESS:-0.0.0.0}
+      - PORT=8080
+      - BIND_ADDRESS=0.0.0.0
       - AUTODARK=${AUTODARK:-false}
       - DISABLE_EXTERNAL_IP_LOOKUP=${DISABLE_EXTERNAL_IP_LOOKUP:-true}
       - UPDATE_CHECK=${UPDATE_CHECK:-false}
-      # Callback interne : fail2ban tourne sur le même hôte (network_mode: host),
-      # le défaut http://127.0.0.1:${PORT} convient donc tel quel.
+      # Callback : par défaut http://127.0.0.1:8080, joignable depuis l'hôte
+      # grâce au port publié ci-dessus. Ne remplir que si ça ne convient pas.
       # - CALLBACK_URL=
       # - CALLBACK_SECRET=
     volumes:
       # Base SQLite, réglages de l'appli, clés SSH générées par fail2ban-ui
-      - fail2ban_ui_config:/config:Z
+      - fail2ban_ui_config:/config
       # Lecture seule : test des logpath avant activation d'une jail
       - /var/log:/var/log:ro
-      # Fail2ban tourne sur l'hôte (cf. ../fail2ban) : accès à sa config...
-      - /etc/fail2ban:/etc/fail2ban:Z
+      # Fail2ban tourne sur l'hôte : accès à sa config...
+      - /etc/fail2ban:/etc/fail2ban
       # ...et à son socket de contrôle
       - /var/run/fail2ban:/var/run/fail2ban
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.fail2ban-ui.entrypoints=websecure
+      - traefik.http.routers.fail2ban-ui.rule=Host(`fail2ban.azteas.com`)
+      - traefik.http.routers.fail2ban-ui.tls=true
+      - traefik.http.routers.fail2ban-ui.tls.certresolver=letsencrypt
+      - traefik.http.routers.fail2ban-ui.middlewares=auth-basic@file,secure-headers@file,rate-limit-admin@file
+      - traefik.http.services.fail2ban-ui-svc.loadbalancer.server.port=8080
+    networks:
+      - azteas-net
+
+networks:
+  azteas-net:
+    external: true
+    name: azteas-net
 
 volumes:
   fail2ban_ui_config:
