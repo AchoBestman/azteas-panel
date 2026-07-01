@@ -18,7 +18,7 @@ services:
       - traefik.http.routers.mailcow.tls=true
       - traefik.http.routers.mailcow.tls.certresolver=letsencrypt
       - traefik.http.routers.mailcow.service=mailcow-svc
-      - traefik.http.routers.mailcow.middlewares=secure-headers@file,rate-limit@file
+      - traefik.http.routers.mailcow.middlewares=secure-headers@file,rate-limit-mailcow@file
 
       # Bloque /user : seuls les admins doivent accéder à l'interface Mailcow
       # (via /admin) ; les mailbox users n'utilisent que le webmail (SOGo).
