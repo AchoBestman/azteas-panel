@@ -92,10 +92,10 @@ input[type="submit"]:hover {
   display: none;
 } */
 
-#fido2-login {
+/* #fido2-login {
   display: none;
 }
 
 .d-flex.flex-column.align-items-center:has(#fido2-login) {
   display: none;
-}
+} */
