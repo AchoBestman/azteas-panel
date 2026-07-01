@@ -59,22 +59,36 @@ input[type="submit"]:hover {
   border-color: var(--azteas-primary);
 }
 
-/* Remplace le texte dynamique "User Login" par un libellé fixe.
+/* Remplace le texte dynamique ("User Login" / "Connexion Utilisateur" / ...)
+   par un libellé fixe, uniquement sur le header des 3 pages de login
+   (user_index.twig, admin_index.twig, domainadmin_index.twig).
+   Sélecteur volontairement précis : "card-header d-flex align-items-center"
+   seul (sans text-break) existe aussi sur reset-password.twig, et
+   "card-header d-flex align-items-center fs-5" sur les widgets du dashboard —
+   ces deux cas ne doivent pas être affectés.
    Le texte est un nœud brut sans balise propre : on annule la taille de
    police du conteneur puis on la restaure sur l'icône (texte injecté via
    ::after) et sur les autres enfants directs (toggle dark mode, langue). */
 
-.card-header > i.bi-person-fill {
+.card-header.d-flex.align-items-center.text-break {
+  font-size: 0;
+}
+
+.card-header.d-flex.align-items-center.text-break > i.bi-person-fill {
   font-size: 1rem;
 }
 
-.card-header > i.bi-person-fill::after {
-  content: "";
+.card-header.d-flex.align-items-center.text-break > i.bi-person-fill::after {
+  content: "AZTEAS WEBMAIL";
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   margin-left: 0.5rem;
+}
+
+.card-header.d-flex.align-items-center.text-break > div {
+  font-size: 1rem;
 }
 
 /* Authentification username/password uniquement : masque le séparateur
