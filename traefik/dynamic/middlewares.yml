@@ -55,16 +55,19 @@ http:
         average: 50
         burst: 100
 
-    # Rate limiting pour Mailcow/SOGo. Plus haut que la limite générale car de
-    # nombreux utilisateurs partagent souvent une même IP publique (CGNAT
-    # opérateur mobile/FAI) — la limite par défaut (50/20) était atteinte par le
-    # trafic cumulé de tout le monde sur ces IP partagées, pas par un abus réel
-    # (confirmé via /var/log/traefik/access.log : plusieurs IP 197.214.238.x
-    # différentes toutes 429, même plage que d'anciens bans fail2ban légitimes).
+    # Rate limiting pour Mailcow/SOGo. Le rateLimit de Traefik est calculé par IP
+    # source ; derrière un NAT d'entreprise ou un CGNAT mobile/FAI, des dizaines
+    # voire des centaines d'utilisateurs partagent une seule IP et donc un seul
+    # quota. Dimensionné pour absorber un pic de connexions simultanées
+    # (ex: ~100 employés ouvrant leur webmail en même temps le matin, chaque
+    # chargement de page générant ~20-30 requêtes) sans pénaliser du trafic
+    # légitime (confirmé via /var/log/traefik/access.log : plusieurs IP
+    # 197.214.238.x différentes toutes 429, même plage que d'anciens bans
+    # fail2ban légitimes — ce n'était pas de l'abus).
     rate-limit-mailcow:
       rateLimit:
-        average: 200
-        burst: 100
+        average: 1000
+        burst: 500
 
     # Bloque inconditionnellement une route (403) : sourceRange ne matche jamais
     # une IP cliente réelle. Utilisé pour interdire /user sur Mailcow — seuls les
