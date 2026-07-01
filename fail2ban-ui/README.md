@@ -8,9 +8,10 @@ fail2ban tourne directement sur l'hôte (voir [`../fail2ban`](../fail2ban)), pas
 ce service s'y connecte localement via son socket de contrôle, monté en volume.
 
 Routé comme les autres services du repo : branché sur `azteas-net`, découvert par Traefik via
-labels Docker. Le seul écart est le port `8080` publié sur `127.0.0.1` de l'hôte — requis pour
+labels Docker. Le seul écart est le port `18080` publié sur `127.0.0.1` de l'hôte — requis pour
 que fail2ban (process hôte) puisse envoyer ses callbacks de ban/unban à l'UI ; ce port n'est
-jamais exposé publiquement (bind explicite sur loopback).
+jamais exposé publiquement (bind explicite sur loopback). Port `18080` et non `8080` : Mailcow
+publie déjà `0.0.0.0:8080` sur ce VPS (`HTTP_PORT` dans le `.env` racine).
 
 ## Authentification
 

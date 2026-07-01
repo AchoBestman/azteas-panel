@@ -6,18 +6,22 @@ services:
     # Publié uniquement sur le loopback de l'hôte : fail2ban (qui tourne sur
     # l'hôte, cf. ../fail2ban) en a besoin pour envoyer ses callbacks de
     # ban/unban à l'UI. Jamais exposé publiquement — Traefik route via le
-    # réseau Docker azteas-net comme les autres services
+    # réseau Docker azteas-net comme les autres services.
+    # Port hôte 18080 (pas 8080) : le nginx de Mailcow publie déjà 0.0.0.0:8080
+    # (HTTP_PORT dans le .env racine) — un conflit qui a empêché ce conteneur
+    # de démarrer correctement lors du premier déploiement.
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:18080:8080"
     environment:
       - PORT=8080
       - BIND_ADDRESS=0.0.0.0
       - AUTODARK=${AUTODARK:-false}
       - DISABLE_EXTERNAL_IP_LOOKUP=${DISABLE_EXTERNAL_IP_LOOKUP:-true}
       - UPDATE_CHECK=${UPDATE_CHECK:-false}
-      # Callback : par défaut http://127.0.0.1:8080, joignable depuis l'hôte
-      # grâce au port publié ci-dessus. Ne remplir que si ça ne convient pas.
-      # - CALLBACK_URL=
+      # Le défaut de l'appli (http://127.0.0.1:${PORT}) se base sur son port
+      # interne (8080), pas sur le port publié côté hôte (18080) — donc
+      # explicite ici, sinon fail2ban (process hôte) callback au mauvais port.
+      - CALLBACK_URL=http://127.0.0.1:18080
       # - CALLBACK_SECRET=
     volumes:
       # Base SQLite, réglages de l'appli, clés SSH générées par fail2ban-ui
