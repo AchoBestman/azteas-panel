@@ -104,10 +104,22 @@ jobs:
               # rm avant cp car l'utilisateur de déploiement n'a pas les droits d'écriture sur ce fichier root.
               rm -f /opt/mailcow-dockerized/data/web/css/build/0081-custom-mailcow.css
               cp /opt/azteas-panel/mailcow/css/custom.css /opt/mailcow-dockerized/data/web/css/build/0081-custom-mailcow.css
+
+              # Thème SOGo (palette Azteas). custom-theme.js est déjà monté par défaut
+              # par mailcow (docker-compose.yml de base) ; custom-theme.css est monté
+              # via notre docker-compose.override.yml une fois généré.
+              mkdir -p /opt/mailcow-dockerized/data/conf/sogo
+              rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
+              cp /opt/azteas-panel/mailcow/sogo/custom-theme.js /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
+              if [ -f /opt/azteas-panel/mailcow/sogo/custom-theme.css ]; then
+                rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
+                cp /opt/azteas-panel/mailcow/sogo/custom-theme.css /opt/mailcow-dockerized/data/conf/sogo/custom-theme.css
+              fi
+
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
               if docker network ls | grep -q mailcowdockerized_mailcow-network; then
                 cd /opt/mailcow-dockerized
-                docker compose up -d nginx-mailcow certdumper
+                docker compose up -d nginx-mailcow certdumper sogo-mailcow
                 echo "Services mis à jour"
               else
                 echo "Mailcow pas encore démarré — lancer manuellement : cd /opt/mailcow-dockerized && docker compose up -d"
