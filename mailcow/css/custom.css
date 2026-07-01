@@ -17,7 +17,7 @@ body {
   border: none;
   border-radius: var(--azteas-radius);
   box-shadow: 0 20px 60px -15px rgba(20, 0, 102, 0.35);
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 /* .card-header {
