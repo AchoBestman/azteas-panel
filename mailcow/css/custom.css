@@ -69,7 +69,7 @@ input[type="submit"]:hover {
 }
 
 .card-header > i.bi-person-fill::after {
-  content: "AZTEAS WEBMAIL";
+  content: "";
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 1rem;
   font-weight: 600;
