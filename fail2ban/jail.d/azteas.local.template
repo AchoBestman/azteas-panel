@@ -23,7 +23,6 @@ enabled   = true
 filter    = piler-weblogin
 logpath   = /var/log/traefik/access.log
 port      = http,https
-banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
 
@@ -35,7 +34,6 @@ enabled   = true
 filter    = mailcow-weblogin
 logpath   = /var/log/traefik/access.log
 port      = http,https
-banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
 
@@ -47,7 +45,6 @@ enabled   = true
 filter    = traefik-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
 
@@ -59,7 +56,6 @@ enabled   = true
 filter    = grafana-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
 
@@ -71,7 +67,6 @@ enabled   = true
 filter    = coolify-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
 
@@ -83,7 +78,6 @@ enabled   = true
 filter    = fail2ban-ui-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-banaction = %(banaction)s
 maxretry  = 3
 findtime  = 600
 
