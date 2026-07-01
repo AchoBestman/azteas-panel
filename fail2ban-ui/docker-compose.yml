@@ -28,6 +28,10 @@ services:
       - /etc/fail2ban:/etc/fail2ban
       # ...et à son socket de contrôle
       - /var/run/fail2ban:/var/run/fail2ban
+      # Bases MaxMind GeoLite2, alimentées par le service geoipupdate
+      # ci-dessous. Activer l'enrichissement GeoIP dans Settings de l'UI
+      # après le premier démarrage (pas de variable d'env pour ça).
+      - geoip_data:/usr/share/GeoIP:ro
     labels:
       - traefik.enable=true
       - traefik.docker.network=azteas-net
@@ -39,6 +43,25 @@ services:
       - traefik.http.services.fail2ban-ui-svc.loadbalancer.server.port=8080
     networks:
       - azteas-net
+    depends_on:
+      - geoipupdate
+
+  # Télécharge et met à jour les bases MaxMind GeoLite2 dans le volume
+  # geoip_data, lu en lecture seule par fail2ban-ui. Image officielle MaxMind.
+  # https://github.com/maxmind/geoipupdate
+  geoipupdate:
+    image: ghcr.io/maxmind/geoipupdate:latest
+    container_name: geoipupdate
+    restart: unless-stopped
+    environment:
+      - GEOIPUPDATE_ACCOUNT_ID=${GEOIPUPDATE_ACCOUNT_ID}
+      - GEOIPUPDATE_LICENSE_KEY=${GEOIPUPDATE_LICENSE_KEY}
+      - GEOIPUPDATE_EDITION_IDS=GeoLite2-Country
+      # Une mise à jour par semaine suffit : MaxMind ne republie GeoLite2
+      # qu'environ chaque mardi.
+      - GEOIPUPDATE_FREQUENCY=168
+    volumes:
+      - geoip_data:/usr/share/GeoIP
 
 networks:
   azteas-net:
@@ -47,3 +70,4 @@ networks:
 
 volumes:
   fail2ban_ui_config:
+  geoip_data:

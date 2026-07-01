@@ -17,6 +17,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.GEOIPUPDATE_LICENSE_KEY }}" ] && missing+=("secret: GEOIPUPDATE_LICENSE_KEY")
+          [ -z "${{ vars.GEOIPUPDATE_ACCOUNT_ID }}" ]      && missing+=("var: GEOIPUPDATE_ACCOUNT_ID")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Manquants :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
       - name: Configurer la clé SSH
         run: |
           mkdir -p ~/.ssh
@@ -24,11 +36,24 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Générer le .env
+        run: |
+          cat > /tmp/fail2ban-ui.env << 'EOF'
+          GEOIPUPDATE_ACCOUNT_ID=${{ vars.GEOIPUPDATE_ACCOUNT_ID }}
+          GEOIPUPDATE_LICENSE_KEY=${{ secrets.GEOIPUPDATE_LICENSE_KEY }}
+          EOF
+
       - name: Sync fail2ban-ui/ vers le VPS
         run: |
           rsync -avz --delete --exclude='.env' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
             fail2ban-ui/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/fail2ban-ui/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/fail2ban-ui.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/fail2ban-ui/.env
+          rm -f /tmp/fail2ban-ui.env
 
       - name: Démarrer fail2ban-ui
         uses: appleboy/ssh-action@v1
@@ -38,6 +63,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
+            chmod 600 /opt/azteas-panel/fail2ban-ui/.env
             cd /opt/azteas-panel/fail2ban-ui
             docker compose pull
             docker compose up -d

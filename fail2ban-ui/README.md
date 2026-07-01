@@ -24,6 +24,21 @@ ce middleware du router sans mettre en place une alternative.
 - fail2ban déjà installé et actif (`fail2ban/setup-fail2ban.sh`)
 - Enregistrement DNS `fail2ban.azteas.com` → IP du VPS
 - `auth-basic@file` configuré (`.htpasswd` déployé par `traefik/setup.sh`)
+- Secrets/variables GitHub `GEOIPUPDATE_ACCOUNT_ID` (var) et `GEOIPUPDATE_LICENSE_KEY`
+  (secret) définis dans les Settings du dépôt (compte gratuit MaxMind)
+
+## Géolocalisation des IP bannies (GeoIP)
+
+Le service `geoipupdate` (image officielle MaxMind) télécharge et met à jour automatiquement
+la base `GeoLite2-Country` dans un volume partagé (`geoip_data`), monté en lecture seule dans
+`fail2ban-ui` sur `/usr/share/GeoIP`. Une fois les deux services démarrés :
+
+1. Vérifier que la base a bien été téléchargée : `docker compose logs geoipupdate`
+2. Aller dans **Settings** de l'UI fail2ban-ui et activer l'enrichissement GeoIP — ce n'est
+   pas une variable d'environnement, ça se fait uniquement depuis l'interface
+
+`GEOIPUPDATE_FREQUENCY=168` (une fois par semaine) suffit — MaxMind ne republie GeoLite2
+qu'environ chaque mardi.
 
 ## Sécurité
 
