@@ -136,8 +136,11 @@ jobs:
 
               # Active le mode debug SOGo pour que le thème Angular Material soit calculé
               # côté client (nécessaire pour l'extraction Playwright qui suit).
-              # \s n'existe pas en BRE/ERE (grep/sed) sans -P : on utilise [[:space:]].
-              sed -i 's|^\([[:space:]]*\)//\([[:space:]]*SOGoUIxDebugEnabled = YES;\)|\1\2|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+              # Normalise la ligne quel que soit son état actuel (commentée par défaut,
+              # déjà "YES" si une exécution précédente a échoué après l'avoir activée,
+              # ou explicitement "NO") au lieu d'un simple toggle qui ne matche qu'un
+              # seul état de départ et devient un no-op silencieux sur les autres.
+              sed -i -E 's#^[[:space:]]*(//)?[[:space:]]*SOGoUIxDebugEnabled[[:space:]]*=[[:space:]]*(YES|NO);#SOGoUIxDebugEnabled = YES;#' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
               grep -n "SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
 
               # Ne redémarrer que si Mailcow tourne déjà (réseau existant)
@@ -197,6 +200,11 @@ jobs:
           rm -f /tmp/custom-theme.css
 
       - name: Désactiver le mode debug SOGo
+        # S'exécute même si une étape précédente (ex. extraction Playwright) a échoué :
+        # sinon SOGoUIxDebugEnabled reste à YES en production jusqu'au prochain déploiement
+        # réussi, et l'étape "enable" du prochain run ne retrouve plus la forme commentée
+        # par défaut qu'elle cherchait à matcher (no-op silencieux, cf. commit précédent).
+        if: always()
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -204,7 +212,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
-            sed -i 's|^\([[:space:]]*\)SOGoUIxDebugEnabled = YES;|\1//SOGoUIxDebugEnabled = YES;|' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
+            sed -i -E 's#^[[:space:]]*(//)?[[:space:]]*SOGoUIxDebugEnabled[[:space:]]*=[[:space:]]*(YES|NO);#//SOGoUIxDebugEnabled = YES;#' /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
             grep -n "SOGoUIxDebugEnabled" /opt/mailcow-dockerized/data/conf/sogo/sogo.conf
             cd /opt/mailcow-dockerized
             # Idem : Memcached doit être redémarré pour que SOGo cesse de servir le
