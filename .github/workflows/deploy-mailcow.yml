@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "mailcow/**"
+      - ".github/workflows/deploy-mailcow.yml"
+  workflow_dispatch:
 
 jobs:
   deploy:
