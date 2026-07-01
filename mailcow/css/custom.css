@@ -78,10 +78,13 @@ input[type="submit"]:hover {
 }
 
 /* Authentification username/password uniquement : masque le séparateur
-   "or login with" et le bouton FIDO2/WebAuthn. */
-/* .hr-title {
-  display: none;
-} */
+   "or login with" et le bouton FIDO2/WebAuthn.
+   CSS ne permet pas de matcher par contenu texte (pas de :contains()) ;
+   .hr-title > strong reproduit structurellement le seul cas existant
+   (div.hr-title contenant un strong avec le texte "or login with"). */
+.hr-title:has(strong) {
+  display: none !important;
+}
 
 #fido2-login {
   display: none;
