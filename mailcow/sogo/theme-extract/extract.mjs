@@ -24,7 +24,7 @@ try {
 
   // Recorded so a failure can show exactly which request (main document or a
   // sub-resource like theme.js/custom-sogo.js) got blocked and how, instead of
-  // just the final rendered state.
+  // just the final rendered state. m
   const responses = [];
   page.on("response", (res) => {
     responses.push({ url: res.url(), status: res.status() });
