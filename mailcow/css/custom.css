@@ -135,6 +135,18 @@ div:has(> label > i.bi-moon-fill):has(> input#dark-mode-toggle) {
   display: none !important;
 }
 
+/* Le sélecteur de langue suivait immédiatement le switch dark mode dans le
+   header (tous deux enfants du même conteneur flex) : c'est le switch, avec
+   sa classe ms-auto, qui le poussait en bord droit. En le masquant ci-dessus,
+   le sélecteur de langue se retrouve collé au titre "AZTEAS WEBMAIL". On lui
+   redonne le même comportement (margin-inline-start: auto = ms-auto) sans
+   dépendre de ses propres classes génériques (ms-4/d-grid/d-sm-block) :
+   identifié par son enfant direct <ul class="dropdown-menu login">, une
+   combinaison propre au dropdown de langue de la page de connexion. */
+div:has(> ul.dropdown-menu.login) {
+  margin-inline-start: auto !important;
+}
+
 /* Bouton "Request password change" de reset-password.twig — même traitement
    que le bouton "Login" ci-dessus. Sélecteur par attribut name (unique à ce
    bouton) plutôt que .btn-success, pour ne pas toucher aux autres .btn-success

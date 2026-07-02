@@ -11,11 +11,19 @@ function mc_logout() {
 
 // Custom SOGo JS
 
-// Change the visible font-size in the editor, this does not change the font of a html message by default
-CKEDITOR.addCss("body {font-size: 16px !important}");
+// CKEDITOR n'existe que sur les pages où l'éditeur de mail est chargé (pas sur
+// la page de connexion, ni Calendrier/Contacts/Préférences) : un appel non
+// protégé lève une ReferenceError qui interrompt tout le reste de ce script
+// sur ces pages-là, empêchant les correctifs ci-dessous (masquage du bouton
+// /user, synchronisation de langue) de s'exécuter là où ils sont justement
+// nécessaires.
+if (typeof CKEDITOR !== "undefined") {
+  // Change the visible font-size in the editor, this does not change the font of a html message by default
+  CKEDITOR.addCss("body {font-size: 16px !important}");
 
-// Enable scayt by default
-//CKEDITOR.config.scayt_autoStartup = true;
+  // Enable scayt by default
+  //CKEDITOR.config.scayt_autoStartup = true;
+}
 
 // Masque le bouton "mailcow Preferences" (icône "build") injecté par mailcow
 // dans les préférences SOGo, qui pointe en dur vers /user — or /user est
