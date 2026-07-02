@@ -114,6 +114,16 @@ jobs:
               rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
               cp /opt/azteas-panel/mailcow/sogo/custom-theme.js /opt/mailcow-dockerized/data/conf/sogo/custom-theme.js
 
+              # custom-sogo.js est aussi monté par défaut par mailcow, mais son contenu
+              # d'origine redirige tout visiteur non authentifié de /SOGo/ vers /user
+              # (form loginForm détecté en JS) — or /user est bloqué (403) par la règle
+              # Traefik mailcow-block-user, volontairement, car seul le webmail SOGo doit
+              # être utilisé par les mailbox users. On déploie donc une version sans ce
+              # redirect (sinon aucun utilisateur sans session existante ne peut se
+              # connecter, et l'extraction Playwright du thème tombe sur le même 403).
+              rm -f /opt/mailcow-dockerized/data/conf/sogo/custom-sogo.js
+              cp /opt/azteas-panel/mailcow/sogo/custom-sogo.js /opt/mailcow-dockerized/data/conf/sogo/custom-sogo.js
+
               # custom-theme.css est bind-mounté par docker-compose.override.yml mais n'est
               # généré (par Playwright) qu'après ce redémarrage. Si le fichier n'existe pas
               # encore, Docker crée un DOSSIER vide à sa place pour satisfaire le mount, ce
