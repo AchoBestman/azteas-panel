@@ -9,8 +9,26 @@
 }
 
 .pane-upper {
-  width: 38%;
-  flex: 0 0 38%;
+  width: 30%;
+  flex: 0 0 30%;
+  display: flex;
+  flex-direction: column;
+  /* .pane (piler.css) met overflow-y:auto sur ce volet entier ; on neutralise
+     ca pour que ce soit #messagelistcontainer qui scroll, pas le pied de
+     page (pagination), qui doit rester fixe en bas (cf. plus bas). */
+  overflow: hidden !important;
+}
+
+/* Piler charge les resultats via $('#qqq').html(a) (piler.js) : le HTML de
+   helper.tpl atterrit DANS ce <span>, pas a sa place. #qqq doit donc devenir
+   lui-meme un conteneur flex-column en pleine hauteur pour que ses enfants
+   (#messagelistcontainer/#messagelistfooter) heritent du comportement
+   scroll-liste / pied-de-page-fixe. */
+#qqq {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
 }
 
 .pane-lower,
@@ -62,8 +80,11 @@
 
 /* --- Liste des messages archives (helper.tpl). Reste une vraie <table>
    (Piler.fill_current_messages_array() exige des <tr> reels pour construire
-   son tableau interne d'ids, cf. commentaire dans helper.tpl), habillee en
-   liste de type client mail via CSS plutot qu'en changeant les balises. --- */
+   son tableau interne d'ids, cf. commentaire dans helper.tpl). Plutot que de
+   s'appuyer sur table-layout (largeurs de colonnes peu fiables, tronquage du
+   sujet pas garanti), on force du flexbox directement sur tr/td avec
+   !important : le nodeName reste "TR" pour le JS, mais le rendu ignore
+   entierement l'algorithme de tableau. */
 
 .mail-list-toolbar {
   display: flex;
@@ -77,9 +98,14 @@
 }
 
 .mail-list {
+  display: block !important;
   width: 100%;
-  table-layout: fixed;
   border-collapse: collapse;
+}
+
+.mail-list tbody {
+  display: block !important;
+  width: 100%;
 }
 
 /* .resultrow est la seule classe qui survit au clic (Piler.view_message_by_pos
@@ -87,8 +113,11 @@
    highlighted"), donc c'est elle qui porte la mise en page, pas une classe
    personnalisee sur la ligne elle-meme (cf. commentaire dans helper.tpl). */
 .mail-list .resultrow {
+  display: flex !important;
+  align-items: flex-start;
+  width: 100%;
   cursor: pointer;
-  border-bottom: 1px solid #eef0f3;
+  border-bottom: 1px solid #d8dbe0 !important;
 }
 
 .mail-list .resultrow:hover {
@@ -100,49 +129,61 @@
 }
 
 .mail-list .resultrow td {
+  display: block;
   padding: 0.65rem 0.5rem;
-  vertical-align: top;
-  border: none;
+  border: none !important;
 }
 
+/* Case a cocher : alignee au debut (haut-gauche) de l'item, pas centree, et
+   agrandie/teintee a la couleur de marque plutot que la case grise par defaut. */
 .mail-list-item-select {
-  width: 2.2rem;
-  text-align: center;
+  flex: 0 0 2.4rem;
+  display: flex !important;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 0.85rem !important;
 }
 
-/* table-layout: fixed distribue l'espace restant a la seule colonne sans
-   largeur fixee : c'est ce qui permet a mail-list-item-body de prendre toute
-   la place disponible tout en laissant text-overflow: ellipsis fonctionner
-   (impossible a garantir avec table-layout: auto, qui elargirait la colonne
-   plutot que de tronquer). */
+.mail-list-item-select input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #140066;
+  cursor: pointer;
+}
+
+.mail-list-item-body {
+  flex: 1 1 auto;
+  min-width: 0; /* indispensable pour que text-overflow: ellipsis marche dans un enfant flex */
+}
+
 .mail-list-item-flags {
-  width: 4.5rem;
+  flex: 0 0 4rem;
   text-align: right;
   white-space: nowrap;
+  padding-top: 0.75rem !important;
 }
 
 .mail-list-item-header {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.mail-list-from,
-.mail-list-to,
-.mail-list-subject-row {
-  display: block;
-  white-space: nowrap;
+.mail-list-from {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.mail-list-from {
+  white-space: nowrap;
   font-size: 0.88rem;
   color: #111827;
 }
 
 .mail-list-to {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.82rem;
   color: #6b7280;
 }
@@ -154,12 +195,24 @@
   white-space: nowrap;
 }
 
+/* Sujet + taille : le sujet tronque avec "...", la taille reste toujours
+   visible en entier (jamais de retour a la ligne, cf. min-width: 0 sur le
+   sujet, qui est ce qui permet a la troncature de fonctionner ici). */
 .mail-list-subject-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
   margin-top: 0.15rem;
   font-size: 0.85rem;
 }
 
 .mail-list-subject {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #140066;
   text-decoration: none;
 }
@@ -169,6 +222,8 @@
 }
 
 .mail-list-size {
+  flex: 0 0 auto;
+  white-space: nowrap;
   color: #9ca3af;
   font-weight: 500;
 }
@@ -178,8 +233,27 @@
   font-size: 0.85rem;
 }
 
-/* --- Pied de liste : pagination a gauche, telechargement/actions groupees a
-   droite (le lien "sphinx" de debug reste disponible, juste restyle). --- */
+/* --- Pied de liste : fixe en bas du volet (la liste scroll derriere, pas le
+   pied de page), pagination a gauche, telechargement/actions groupees a
+   droite. La classe d'origine "upper-pane-fixed" du template ne correspond
+   deja pas a la regle ".pane-upper-fixed" de piler.css (bug amont de Piler) :
+   ce pied de page n'a donc jamais ete reellement fixe par defaut. --- */
+
+#messagelistcontainer {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  height: auto !important; /* remplace le calc(100% - 40px) de .pane-upper-content, plus pertinent maintenant que .pane-upper est en colonne flex */
+}
+
+#messagelistfooter,
+.mail-list-footer {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  border-top: 2px solid #dcdfe6;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
+}
 
 .mail-list-footer {
   display: flex;
@@ -187,14 +261,15 @@
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  padding: 0.5rem 0.9rem;
+  padding: 0.6rem 0.9rem;
 }
 
 .mail-list-footer-paging {
   display: flex;
   align-items: center;
   gap: 0.15rem;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   color: #374151;
 }
 
@@ -204,8 +279,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 0.4rem;
   color: #140066;
   text-decoration: none;
