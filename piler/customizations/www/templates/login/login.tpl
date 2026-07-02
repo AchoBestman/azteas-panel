@@ -19,8 +19,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #1e3a5f 0%, #0f2540 100%);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a0080 0%, #0a0033 100%);
+        font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
       }
 
       #logincontainer.container {
@@ -32,21 +32,11 @@
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
       }
 
-      #logo-lg {
-        text-align: center;
-        margin-bottom: 1.75rem;
-      }
-
-      #logo-lg img {
-        max-height: 64px;
-        max-width: 100%;
-      }
-
       .form-signin h2 {
         text-align: center;
         font-size: 1.4rem !important;
         font-weight: 600 !important;
-        color: #1e3a5f;
+        color: #140066;
         margin-bottom: 1.5rem !important;
       }
 
@@ -61,12 +51,12 @@
       }
 
       .form-signin .form-control:focus {
-        border-color: #1e3a5f;
-        box-shadow: 0 0 0 0.2rem rgba(30, 58, 95, 0.15);
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
       }
 
       .form-signin .btn-primary {
-        background: #1e3a5f;
+        background: #140066;
         border: none;
         border-radius: 0.6rem;
         font-weight: 600;
@@ -75,7 +65,7 @@
       }
 
       .form-signin .btn-primary:hover {
-        background: #14283f;
+        background: #4f46e5;
       }
 
       .compatibility {
@@ -85,7 +75,7 @@
       }
 
       .compatibility a {
-        color: #1e3a5f;
+        color: #140066;
       }
 
       #captcha {
@@ -100,7 +90,6 @@
 <?php if(!Registry::get('username')) { ?>
 
     <div id="logincontainer" class="container">
-        <div id="logo-lg"><img src="<?php print SITE_LOGO_LG; ?>" alt="Archive Logo Image" title="Login" /></div>
 
         <form name="login" action="<?php print PATH_PREFIX; ?>login.php" method="post" class="form-signin">
 
@@ -134,8 +123,6 @@
             <?php if(ENABLE_GOOGLE_LOGIN == 1) { ?>
                <p><a href="<?php print $auth_url; ?>"><?php print $text_login_via_google; ?></a></p>
             <?php } ?>
-
-              <p><?php print COMPATIBILITY; ?></p>
             </div>
             <div class="col"></div>
           </div>
