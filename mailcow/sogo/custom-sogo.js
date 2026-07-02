@@ -44,7 +44,13 @@ if (typeof CKEDITOR !== "undefined") {
 // data/web/index.php de mailcow-dockerized : rôle "user" + sogo_access actif
 // => Location: /SOGo/so/, jamais /user), donc pas de conflit avec le blocage
 // Traefik de /user.
+// Exception : DebugEnabled (variable globale définie par SOGo lui-même,
+// UIxPageFrame.wox) n'est vrai que lorsque SOGoUIxDebugEnabled=YES, c'est-à-
+// dire uniquement pendant l'extraction Playwright du thème (deploy-mailcow.yml).
+// Sans cette exception, ce redirect empêche Playwright d'atteindre le vrai
+// formulaire de connexion SOGo dont il a besoin pour calculer le thème.
 document.addEventListener("DOMContentLoaded", function () {
+  if (typeof DebugEnabled !== "undefined" && DebugEnabled) return;
   if (document.forms.namedItem("loginForm")) {
     window.location.href = "/";
   }
