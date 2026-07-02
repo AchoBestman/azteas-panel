@@ -37,28 +37,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.6rem;
         margin-bottom: 1.5rem;
       }
 
       .brand-lockup img {
-        height: 40px;
+        height: 56px;
         width: auto;
-      }
-
-      .brand-lockup span {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #140066;
-        letter-spacing: 0.04em;
-      }
-
-      .form-signin h2 {
-        text-align: center;
-        font-size: 1.4rem !important;
-        font-weight: 600 !important;
-        color: #140066;
-        margin-bottom: 1.5rem !important;
       }
 
       .form-signin .form-floating {
@@ -116,10 +100,7 @@
 
             <div class="brand-lockup">
               <img src="/assets/ico/azteas-favicon.ico" alt="Azteas" />
-              <span>AZTEAS</span>
             </div>
-
-            <h2 class="fs-1 mb-3 fw-light"><?php print $text_login; ?></h2>
 
             <?php if(isset($x)){ ?><p class="alert alert-error lead"><?php print $x; ?></p><?php } ?>
             <input type="hidden" name="relocation" value="<?php if(isset($_GET['route']) && !preg_match("/^login/", $_GET['route']) ) { if(isset($_SERVER['REDIRECT_URL'])) { print $_SERVER['REDIRECT_URL']; } else { print $_SERVER['QUERY_STRING']; } } ?>" />
