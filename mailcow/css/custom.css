@@ -124,6 +124,31 @@ input[type="submit"]:hover {
   display: none;
 }
 
+/* Masque le switch dark mode (mode clair uniquement pour l'instant).
+   Pas de sélecteur sur les classes du conteneur (ms-auto/form-check/
+   form-switch/d-flex...) : ce sont des utilitaires Bootstrap génériques
+   réutilisés ailleurs sur la page, les cibler risquerait un effet de bord.
+   On identifie plutôt le conteneur par sa structure : un div ayant pour
+   enfants directs un label contenant l'icône bi-moon-fill et un input
+   #dark-mode-toggle — cette combinaison est unique à ce switch. */
+div:has(> label > i.bi-moon-fill):has(> input#dark-mode-toggle) {
+  display: none !important;
+}
+
+/* Bouton "Request password change" de reset-password.twig — même traitement
+   que le bouton "Login" ci-dessus. Sélecteur par attribut name (unique à ce
+   bouton) plutôt que .btn-success, pour ne pas toucher aux autres .btn-success
+   volontairement exclus (cf. commentaire du bouton Login juste au-dessus). */
+button[name="pw_reset_request"] {
+  background: var(--azteas-primary);
+  border-color: var(--azteas-primary);
+}
+
+button[name="pw_reset_request"]:hover {
+  background: var(--azteas-primary-light);
+  border-color: var(--azteas-primary-light);
+}
+
 /* Masque le lien "Préférences" (/user) dans la barre de navigation — l'accès
    est de toute façon bloqué côté serveur par Traefik (middleware deny-all sur
    Host(mail.azteas.com) && PathPrefix(/user)), ceci évite juste d'afficher un
