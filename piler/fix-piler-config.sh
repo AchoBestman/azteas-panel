@@ -73,10 +73,17 @@ echo "=== 6/7 : Feuille de style Azteas (layout liste/contenu de search.php) ===
 # "grep -q ... || append" (la ligne "existe" deja, vide). On remplace donc la
 # ligne si elle existe, sinon on l'ajoute. Le fichier reference est deploye
 # par customizations/www/assets/css/azteas-panes.css (voir apply-customizations.sh).
+# Cache-buster automatique : sans parametre de version, le navigateur peut
+# garder azteas-panes.css en cache indefiniment (aucune invalidation cote
+# client sinon), donc un changement de CSS deploye avec succes peut rester
+# invisible pour un visiteur qui l'a deja charge une fois. Le hash est calcule
+# sur le fichier local (deja synchronise sur le VPS par rsync avant ce
+# script), donc il change automatiquement des que le contenu change.
+CSS_VERSION=$(md5sum "$(dirname "${BASH_SOURCE[0]}")/customizations/www/assets/css/azteas-panes.css" | cut -c1-8)
 if docker compose exec piler grep -q "config\['CUSTOM_CSS'\]" /etc/piler/config-site.php; then
-    docker compose exec piler sed -i "s#\\\$config\['CUSTOM_CSS'\].*#\$config['CUSTOM_CSS'] = '<link rel=\"stylesheet\" href=\"/assets/css/azteas-panes.css\">';#" /etc/piler/config-site.php
+    docker compose exec piler sed -i "s#\\\$config\['CUSTOM_CSS'\].*#\$config['CUSTOM_CSS'] = '<link rel=\"stylesheet\" href=\"/assets/css/azteas-panes.css?v=${CSS_VERSION}\">';#" /etc/piler/config-site.php
 else
-    printf "%s\n" "\$config['CUSTOM_CSS'] = '<link rel=\"stylesheet\" href=\"/assets/css/azteas-panes.css\">';" | docker compose exec -T piler tee -a /etc/piler/config-site.php > /dev/null
+    printf "%s\n" "\$config['CUSTOM_CSS'] = '<link rel=\"stylesheet\" href=\"/assets/css/azteas-panes.css?v=${CSS_VERSION}\">';" | docker compose exec -T piler tee -a /etc/piler/config-site.php > /dev/null
 fi
 docker compose exec piler grep CUSTOM_CSS /etc/piler/config-site.php
 
