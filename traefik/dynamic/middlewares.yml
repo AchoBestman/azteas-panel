@@ -69,10 +69,14 @@ http:
         average: 1000
         burst: 500
 
-    # Bloque inconditionnellement une route (403) : sourceRange ne matche jamais
-    # une IP cliente réelle. Utilisé pour interdire /user sur Mailcow — seuls les
-    # admins doivent accéder à l'interface Mailcow (via /admin), pas les mailbox users.
-    deny-all:
-      ipAllowList:
-        sourceRange:
-          - "127.0.0.1/32"
+    # Redirige /user vers / au lieu d'un blocage brutal (403) : seuls les
+    # admins doivent utiliser l'interface Mailcow (via /admin), pas les
+    # mailbox users. La page de login Mailcow (/) redirige elle-même les
+    # mailbox users authentifiés vers /SOGo/so/ (cf. data/web/index.php de
+    # mailcow-dockerized : rôle "user" + sogo_access actif), donc rediriger
+    # ici plutôt que bloquer ne les renvoie jamais sur une page inaccessible.
+    redirect-user-to-root:
+      redirectRegex:
+        regex: "^(https?://[^/]+)/user.*"
+        replacement: "${1}/"
+        permanent: false
