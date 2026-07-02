@@ -1,0 +1,61 @@
+/* Azteas — reorganise la page de recherche (search.php) en liste (gauche) /
+   contenu (droite), comme une vraie interface mail, au lieu de l'empilement
+   liste (haut) / apercu (bas) par defaut de Piler (voir
+   webui/templates/common/layout-search.tpl et webui/assets/css/piler.css
+   dans les sources de Piler). */
+
+.container-panes {
+  flex-direction: row;
+}
+
+.pane-upper {
+  width: 38%;
+  flex: 0 0 38%;
+}
+
+.pane-lower,
+#preview {
+  width: 62%;
+  flex: 1 1 auto;
+  height: 100% !important;
+}
+
+/* Le resizer de Piler ne sait redimensionner qu'en hauteur (drag vertical,
+   voir assets/js/resizer.js : il modifie .style.height via e.clientY). En
+   layout gauche/droite on le garde comme simple separateur visuel plutot que
+   de reecrire sa logique de drag pour un axe different. */
+.resizer {
+  width: 1px;
+  height: auto !important;
+  cursor: default;
+  pointer-events: none;
+  background: #e5e7eb;
+}
+
+/* Etat vide du volet de contenu : Piler remplace le HTML de #preview par le
+   message via $(...).html(a) sans jamais toucher ses classes (piler.js,
+   view_message()). Le contenu d'un message inclut toujours .messageheader,
+   donc :has() suffit a distinguer "rien de charge" de "message affiche" sans
+   JS supplementaire. */
+#preview:not(:has(.messageheader)) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pane-empty-state {
+  text-align: center;
+  color: #9ca3af;
+}
+
+.pane-empty-state i {
+  display: block;
+  font-size: 3.5rem;
+  color: #dde3ea;
+  margin-bottom: 1rem;
+}
+
+.pane-empty-state p {
+  font-size: 0.95rem;
+  margin: 0;
+}
