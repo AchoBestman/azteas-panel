@@ -19,7 +19,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #1a0080 0%, #0a0033 100%);
+        background: #ffffff;
         font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
       }
 
@@ -28,8 +28,29 @@
         width: 100%;
         padding: 2.75rem 2.5rem;
         background: rgba(255, 255, 255, 0.97);
+        border: 2px solid #140066;
         border-radius: 1rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 20px 60px -15px rgba(20, 0, 102, 0.35);
+      }
+
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .brand-lockup img {
+        height: 40px;
+        width: auto;
+      }
+
+      .brand-lockup span {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #140066;
+        letter-spacing: 0.04em;
       }
 
       .form-signin h2 {
@@ -92,6 +113,11 @@
     <div id="logincontainer" class="container">
 
         <form name="login" action="<?php print PATH_PREFIX; ?>login.php" method="post" class="form-signin">
+
+            <div class="brand-lockup">
+              <img src="/assets/ico/azteas-favicon.ico" alt="Azteas" />
+              <span>AZTEAS</span>
+            </div>
 
             <h2 class="fs-1 mb-3 fw-light"><?php print $text_login; ?></h2>
 
