@@ -60,8 +60,10 @@
   margin: 0;
 }
 
-/* --- Liste des messages archives (helper.tpl), remplace le <table> par une
-   liste de type client mail avec cases a cocher pour la selection groupee. --- */
+/* --- Liste des messages archives (helper.tpl). Reste une vraie <table>
+   (Piler.fill_current_messages_array() exige des <tr> reels pour construire
+   son tableau interne d'ids, cf. commentaire dans helper.tpl), habillee en
+   liste de type client mail via CSS plutot qu'en changeant les balises. --- */
 
 .mail-list-toolbar {
   display: flex;
@@ -74,17 +76,19 @@
   color: #6b7280;
 }
 
+.mail-list {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
 /* .resultrow est la seule classe qui survit au clic (Piler.view_message_by_pos
    ecrase l'attribut class de la ligne avec "resultrow" / "resultrow
    highlighted"), donc c'est elle qui porte la mise en page, pas une classe
    personnalisee sur la ligne elle-meme (cf. commentaire dans helper.tpl). */
 .mail-list .resultrow {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.65rem 0.9rem;
-  border-bottom: 1px solid #eef0f3;
   cursor: pointer;
+  border-bottom: 1px solid #eef0f3;
 }
 
 .mail-list .resultrow:hover {
@@ -95,13 +99,26 @@
   background: #ece9fb !important;
 }
 
-.mail-list-item-select {
-  padding-top: 0.15rem;
+.mail-list .resultrow td {
+  padding: 0.65rem 0.5rem;
+  vertical-align: top;
+  border: none;
 }
 
-.mail-list-item-body {
-  flex: 1 1 auto;
-  min-width: 0; /* necessaire pour que text-overflow: ellipsis marche dans un flex item */
+.mail-list-item-select {
+  width: 2.2rem;
+  text-align: center;
+}
+
+/* table-layout: fixed distribue l'espace restant a la seule colonne sans
+   largeur fixee : c'est ce qui permet a mail-list-item-body de prendre toute
+   la place disponible tout en laissant text-overflow: ellipsis fonctionner
+   (impossible a garantir avec table-layout: auto, qui elargirait la colonne
+   plutot que de tronquer). */
+.mail-list-item-flags {
+  width: 4.5rem;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .mail-list-item-header {
@@ -156,17 +173,13 @@
   font-weight: 500;
 }
 
-.mail-list-item-flags {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding-top: 0.15rem;
+.mail-list-item-flags i {
+  margin-left: 0.35rem;
   font-size: 0.85rem;
 }
 
 /* --- Pied de liste : pagination a gauche, telechargement/actions groupees a
-   droite (le lien "sphinx" de debug a ete retire dans helper.tpl). --- */
+   droite (le lien "sphinx" de debug reste disponible, juste restyle). --- */
 
 .mail-list-footer {
   display: flex;
@@ -180,7 +193,30 @@
 .mail-list-footer-paging {
   display: flex;
   align-items: center;
+  gap: 0.15rem;
   font-size: 0.85rem;
+  color: #374151;
+}
+
+/* .navlink n'a aucun style dans piler.css (juste des <i> nus dans des <a>) :
+   d'ou une pagination presque invisible. On en fait de vrais petits boutons. */
+.mail-list-footer-paging .navlink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.4rem;
+  color: #140066;
+  text-decoration: none;
+}
+
+a.navlink:hover {
+  background: #ece9fb;
+}
+
+.navlink .muted {
+  color: #d1d5db;
 }
 
 .mail-list-footer-actions {

@@ -1,12 +1,20 @@
 <div id="messagelistcontainer" class="pane-upper-content">
-  <div id="results" class="mail-list">
 
 <?php if(FULL_GUI) { ?>
-    <div class="mail-list-toolbar">
-      <input type="checkbox" id="bulkcheck" name="bulkcheck" value="1" <?php if(SEARCH_RESULT_CHECKBOX_CHECKED == 1) { ?>checked="checked"<?php } ?> class="restorebox" onclick="Piler.toggle_bulk_check('');" />
-      <span class="mail-list-toolbar-label">Select all</span>
-    </div>
+  <div class="mail-list-toolbar">
+    <input type="checkbox" id="bulkcheck" name="bulkcheck" value="1" <?php if(SEARCH_RESULT_CHECKBOX_CHECKED == 1) { ?>checked="checked"<?php } ?> class="restorebox" onclick="Piler.toggle_bulk_check('');" />
+    <span class="mail-list-toolbar-label">Select all</span>
+  </div>
 <?php } ?>
+
+  <!-- Piler.fill_current_messages_array() (piler.js) exige explicitement des
+       <tr id="e_..."> a l'interieur de "#results tbody" (verifie
+       x.nodeName == "TR") pour construire Piler.Messages ; sans ca, cliquer
+       sur un message envoie un id "undefined" au serveur ("invalid id").
+       On garde donc table/tbody/tr/td et on habille tout en liste via CSS
+       (mail-list-* dans azteas-panes.css), pas en changeant les balises. -->
+  <table id="results" class="mail-list">
+    <tbody>
 
 <?php $i=0; foreach ($messages as $message) { ?>
 
@@ -14,15 +22,15 @@
          ligne par "resultrow" / "resultrow highlighted" (attr('class', ...),
          pas addClass()) : le style doit donc s'appuyer sur .resultrow, qui
          seul survit a la selection, pas sur une classe personnalisee ici. -->
-    <div class="resultrow new <?php if($message['deleted'] == 1) { ?>xxx<?php } ?>" id="e_<?php print $message['id']; ?>" onmouseover="Piler.current_message_id = <?php print $message['id']; ?>; return false;" onclick="Piler.view_message_by_pos(<?php print $i; ?>);">
+    <tr class="resultrow new <?php if($message['deleted'] == 1) { ?>xxx<?php } ?>" id="e_<?php print $message['id']; ?>" onmouseover="Piler.current_message_id = <?php print $message['id']; ?>; return false;" onclick="Piler.view_message_by_pos(<?php print $i; ?>);">
 
 <?php if(FULL_GUI) { ?>
-      <div class="mail-list-item-select" onclick="Piler.stop_propagation(event);">
+      <td class="mail-list-item-select" onclick="Piler.stop_propagation(event);">
         <input type="checkbox" id="r_<?php print $message['id']; ?>" name="r_<?php print $message['id']; ?>" value="iiii" <?php if(SEARCH_RESULT_CHECKBOX_CHECKED == 1) { ?>checked="checked"<?php } ?> class="restorebox" />
-      </div>
+      </td>
 <?php } ?>
 
-      <div class="mail-list-item-body">
+      <td class="mail-list-item-body">
         <div class="mail-list-item-header">
           <span class="mail-list-from"><strong><?php print $text_from; ?>:</strong> <?php print $message['from']; ?></span>
           <span class="mail-list-date" title="<?php print $message['preview_date']; ?>"><?php print $message['date']; ?></span>
@@ -37,20 +45,22 @@
 <?php if($message['marked_for_removal'] == 1) { ?> <span class="private">R</span><?php } ?>
           <span class="mail-list-size">: <?php print $message['size']; ?></span>
         </div>
-      </div>
+      </td>
 
-      <div class="mail-list-item-flags">
+      <td class="mail-list-item-flags">
 <?php if($message['spam'] == 1) { ?><i class="bi bi-exclamation-triangle spam" title="<?php print $text_spam_flag; ?>"></i><?php } ?>
 <?php if($message['attachments'] > 0) { ?><i class="bi bi-paperclip attachment" title="<?php print $text_attachment_flag; ?>"></i><?php } ?>
 <?php if($message['note']) { ?><i class="bi bi-sticky notes" title="<?php print $message['note']; ?>"></i><?php } ?>
 <?php if($message['tag']) { ?><i class="bi bi-tag tag" title="<?php print $message['tag']; ?>"></i><?php } ?>
-      </div>
+      </td>
 
-    </div>
+    </tr>
 
 <?php $i++; } ?>
 
-  </div>
+    </tbody>
+  </table>
+
 </div>
 
 <div id="messagelistfooter" class="boxfooter mail-list-footer upper-pane-fixed">

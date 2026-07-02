@@ -65,12 +65,19 @@ docker compose exec piler grep BRANDING_FAVICON /etc/piler/config-site.php
 
 echo ""
 echo "=== 6/7 : Feuille de style Azteas (layout liste/contenu de search.php) ==="
-# CUSTOM_CSS (config.php.in, vide par defaut) est le hook officiel de Piler
-# pour injecter du CSS supplementaire dans <head>, sans toucher a son propre
-# piler.css. Le fichier reference est deploye par
-# customizations/www/assets/css/azteas-panes.css (voir apply-customizations.sh).
-docker compose exec piler grep -q "'CUSTOM_CSS'" /etc/piler/config-site.php || \
+# CUSTOM_CSS (config.php.in) vaut '' par defaut, mais config.php.in precise
+# que c'est le champ prevu pour etre expose dans l'assistant/panneau
+# d'administration de Piler : config-site.php peut donc deja contenir une
+# ligne "$config['CUSTOM_CSS'] = '';" (generee par Piler lui-meme) AVANT
+# notre premier passage, ce qui ferait echouer silencieusement un simple
+# "grep -q ... || append" (la ligne "existe" deja, vide). On remplace donc la
+# ligne si elle existe, sinon on l'ajoute. Le fichier reference est deploye
+# par customizations/www/assets/css/azteas-panes.css (voir apply-customizations.sh).
+if docker compose exec piler grep -q "config\['CUSTOM_CSS'\]" /etc/piler/config-site.php; then
+    docker compose exec piler sed -i "s#\\\$config\['CUSTOM_CSS'\].*#\$config['CUSTOM_CSS'] = '<link rel=\"stylesheet\" href=\"/assets/css/azteas-panes.css\">';#" /etc/piler/config-site.php
+else
     printf "%s\n" "\$config['CUSTOM_CSS'] = '<link rel=\"stylesheet\" href=\"/assets/css/azteas-panes.css\">';" | docker compose exec -T piler tee -a /etc/piler/config-site.php > /dev/null
+fi
 docker compose exec piler grep CUSTOM_CSS /etc/piler/config-site.php
 
 echo ""
