@@ -4,6 +4,41 @@
    webui/templates/common/layout-search.tpl et webui/assets/css/piler.css
    dans les sources de Piler). */
 
+/* --- En-tete (menu.tpl) : couleur de marque, logo (voir BRANDING_LOGO dans
+   fix-piler-config.sh), bouton de deconnexion plus visible. --- */
+
+#menu {
+  background: #140066 !important;
+}
+
+.menulink:hover {
+  background: #1a0080 !important;
+}
+
+.logout-link {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 0.4rem;
+  padding: 6px 14px !important;
+}
+
+.logout-link:hover {
+  background: rgba(255, 255, 255, 0.28) !important;
+}
+
+/* Boutons de recherche (barre du haut + modale "Advanced search") a la
+   couleur de marque plutot que le rouge/bleu Bootstrap par defaut. */
+.btn-search.btn-danger,
+#advancedSearchModal .btn-primary {
+  background-color: #140066 !important;
+  border-color: #140066 !important;
+}
+
+.btn-search.btn-danger:hover,
+#advancedSearchModal .btn-primary:hover {
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+}
+
 .container-panes {
   flex-direction: row;
 }

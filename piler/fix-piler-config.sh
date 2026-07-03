@@ -16,19 +16,19 @@ source .env
 # Piler n'est jamais accede directement avec un port custom.
 CORRECT_SITE_URL="https://${ARCHIVE_HOST}/"
 
-echo "=== 1/7 : Correction du port Manticore read-only ==="
+echo "=== 1/8 : Correction du port Manticore read-only ==="
 docker compose exec piler sed -i \
     "s/SPHINX_HOSTNAME_READONLY'\] = 'manticore:9307'/SPHINX_HOSTNAME_READONLY'] = 'manticore:9306'/" \
     /etc/piler/config-site.php
 docker compose exec piler grep SPHINX_HOSTNAME_READONLY /etc/piler/config-site.php
 
 echo ""
-echo "=== 2/7 : Correction de SITE_URL (port + https manquants) ==="
+echo "=== 2/8 : Correction de SITE_URL (port + https manquants) ==="
 docker compose exec -T -e NEW_SITE_URL="${CORRECT_SITE_URL}" piler php < fix-site-url.php
 docker compose exec piler grep "SITE_URL" /etc/piler/config-site.php
 
 echo ""
-echo "=== 3/7 : Creation des tables RT manquantes dans Manticore ==="
+echo "=== 3/8 : Creation des tables RT manquantes dans Manticore ==="
 # L'image sutoj/piler genere la config referencant piler1/tag1/note1
 # mais ne cree jamais ces tables dans Manticore au demarrage.
 # On les cree nous-memes ici, idempotent grace a IF NOT EXISTS.
@@ -46,7 +46,7 @@ echo "Tables Manticore actuelles :"
 docker compose exec manticore mysql -h127.0.0.1 -P9306 -e "SHOW TABLES;"
 
 echo ""
-echo "=== 4/7 : Correction du fuseau horaire (bug de calcul de date Accounting) ==="
+echo "=== 4/8 : Correction du fuseau horaire (bug de calcul de date Accounting) ==="
 # Le defaut 'Europe/Budapest' (UTC+2) combine a un arrondi naif (% 86400) dans
 # model/accounting/accounting.php decale tous les calculs de date d'un jour.
 # UTC elimine le probleme quelle que soit la position geographique reelle.
@@ -55,7 +55,7 @@ docker compose exec piler grep -q "'TIMEZONE'" /etc/piler/config-site.php || \
 docker compose exec piler grep TIMEZONE /etc/piler/config-site.php
 
 echo ""
-echo "=== 5/7 : Remplacement du favicon Piler par celui d'Azteas ==="
+echo "=== 5/8 : Remplacement du favicon Piler par celui d'Azteas ==="
 # BRANDING_FAVICON (config.php.in) est le HTML injecte dans <head> pour le
 # favicon ; le fichier qu'il reference est deploye par
 # customizations/www/assets/ico/azteas-favicon.ico (voir apply-customizations.sh).
@@ -64,7 +64,7 @@ docker compose exec piler grep -q "'BRANDING_FAVICON'" /etc/piler/config-site.ph
 docker compose exec piler grep BRANDING_FAVICON /etc/piler/config-site.php
 
 echo ""
-echo "=== 6/7 : Feuille de style Azteas (layout liste/contenu de search.php) ==="
+echo "=== 6/8 : Feuille de style Azteas (layout liste/contenu de search.php) ==="
 # CUSTOM_CSS (config.php.in) vaut '' par defaut, mais config.php.in precise
 # que c'est le champ prevu pour etre expose dans l'assistant/panneau
 # d'administration de Piler : config-site.php peut donc deja contenir une
@@ -88,6 +88,26 @@ fi
 docker compose exec piler grep CUSTOM_CSS /etc/piler/config-site.php
 
 echo ""
+echo "=== 7/8 : Logo Azteas dans l'en-tete (BRANDING_LOGO/URL/TEXT) ==="
+# Meme logique de remplacement idempotent que CUSTOM_CSS ci-dessus (ces cles
+# peuvent deja exister, vides, via l'assistant Piler). BRANDING_URL vide
+# desactive le lien cliquable du logo : par defaut il pointe vers
+# mailpiler.org, pas pertinent ici. Le fichier reference (meme favicon que
+# BRANDING_FAVICON) est deja deploye par apply-customizations.sh.
+set_piler_config() {
+    local key="$1" value="$2"
+    if docker compose exec piler grep -q "config\['${key}'\]" /etc/piler/config-site.php; then
+        docker compose exec piler sed -i "s#\\\$config\['${key}'\].*#\$config['${key}'] = '${value}';#" /etc/piler/config-site.php
+    else
+        printf "%s\n" "\$config['${key}'] = '${value}';" | docker compose exec -T piler tee -a /etc/piler/config-site.php > /dev/null
+    fi
+}
+set_piler_config "BRANDING_LOGO" "/assets/ico/azteas-favicon.ico"
+set_piler_config "BRANDING_URL" ""
+set_piler_config "BRANDING_TEXT" "Azteas Archive"
+docker compose exec piler grep -E "BRANDING_LOGO|BRANDING_URL|BRANDING_TEXT" /etc/piler/config-site.php
+
+echo ""
 echo "=== Ajout du domaine ${ARCHIVE_HOST#archive.} dans le registre interne Piler ==="
 # Piler a son propre registre de domaines (separe de Mailcow) utilise pour
 # filtrer les stats d'Accounting (get_mapped_domains()). Sans cette entree,
@@ -98,7 +118,7 @@ docker compose exec mysql mariadb -u piler -p"${MYSQL_PASSWORD}" piler -e \
 docker compose exec mysql mariadb -u piler -p"${MYSQL_PASSWORD}" piler -e "SELECT * FROM domain;"
 
 echo ""
-echo "=== 7/7 : Application des personnalisations d'interface (si presentes) ==="
+echo "=== 8/8 : Application des personnalisations d'interface (si presentes) ==="
 if [ -f "$(dirname "${BASH_SOURCE[0]}")/customizations/apply-customizations.sh" ]; then
     bash "$(dirname "${BASH_SOURCE[0]}")/customizations/apply-customizations.sh" || true
 fi

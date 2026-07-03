@@ -98,7 +98,10 @@
       <a href="#" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#deleteModal" title="<?php print $text_remove; ?>"><i class="bi bi-trash text-danger"></i></a>
 <?php } ?>
 
-    <input type="text" id="tag_value" name="tag_value" class="tagtext" />
+    <!-- Ce n'est pas un champ de recherche : Piler.tag_search_results() applique
+         ce texte comme tag aux messages actuellement COCHES (get_selected_messages_list()) ;
+         sans case cochee, le clic sur l'icone Tag ne fait rien (silencieusement). -->
+    <input type="text" id="tag_value" name="tag_value" class="tagtext" placeholder="Nom du tag..." />
     <a href="#" class="btn btn-link" onclick="Piler.tag_search_results('<?php print $text_tagged; ?>');" title="<?php print $text_tag_selected_messages; ?>"><i class="bi bi-tags tag" title="Tag"></i></a>
 
   </div>
