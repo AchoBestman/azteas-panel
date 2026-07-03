@@ -25,9 +25,12 @@
   background: rgba(255, 255, 255, 0.28) !important;
 }
 
-/* Logo rond plutot que rectangulaire (voir BRANDING_LOGO). */
+/* Logo rond plutot que rectangulaire (voir BRANDING_LOGO), et plus grand que
+   le max-height: 25px par defaut de piler.css (barre #header haute de 45px,
+   donc de la marge pour grandir). */
 .branding_logo {
   border-radius: 50%;
+  max-height: 38px !important;
 }
 
 /* Options > Save / Load, et tout dropdown Bootstrap standard : hover a la
