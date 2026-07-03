@@ -94,11 +94,20 @@ i.attachment {
   color: #140066;
 }
 
-.container-panes {
+/* Tout ce bloc de mise en page (2 volets gauche/droite) est scope a
+   "body.azteas-search" (ajoute dans notre layout-search.tpl override) :
+   layout-audit.tpl ET layout-audit-removal.tpl reutilisent EXACTEMENT les
+   memes classes/id (.container-panes, .pane-upper, #qqq, #messagelistfooter),
+   donc sans ce scope ces regles s'appliquaient aussi a la page d'audit et a
+   la page de suppression, ecrasant leur large tableau (date/user/ip/action/
+   ref) dans un volet etroit de 30% — ce qui rendait les liens/colonnes
+   difficiles a utiliser sur ces pages-la. */
+
+body.azteas-search .container-panes {
   flex-direction: row;
 }
 
-.pane-upper {
+body.azteas-search .pane-upper {
   width: 30%;
   flex: 0 0 30%;
   display: flex;
@@ -114,15 +123,15 @@ i.attachment {
    lui-meme un conteneur flex-column en pleine hauteur pour que ses enfants
    (#messagelistcontainer/#messagelistfooter) heritent du comportement
    scroll-liste / pied-de-page-fixe. */
-#qqq {
+body.azteas-search #qqq {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
 }
 
-.pane-lower,
-#preview {
+body.azteas-search .pane-lower,
+body.azteas-search #preview {
   width: 62%;
   flex: 1 1 auto;
   height: 100% !important;
@@ -132,7 +141,7 @@ i.attachment {
    voir assets/js/resizer.js : il modifie .style.height via e.clientY). En
    layout gauche/droite on le garde comme simple separateur visuel plutot que
    de reecrire sa logique de drag pour un axe different. */
-.resizer {
+body.azteas-search .resizer {
   width: 1px;
   height: auto !important;
   cursor: default;
@@ -145,7 +154,7 @@ i.attachment {
    view_message()). Le contenu d'un message inclut toujours .messageheader,
    donc :has() suffit a distinguer "rien de charge" de "message affiche" sans
    JS supplementaire. */
-#preview:not(:has(.messageheader)) {
+body.azteas-search #preview:not(:has(.messageheader)) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,13 +338,15 @@ i.attachment {
    deja pas a la regle ".pane-upper-fixed" de piler.css (bug amont de Piler) :
    ce pied de page n'a donc jamais ete reellement fixe par defaut. --- */
 
-#messagelistcontainer {
+/* #messagelistfooter existe aussi tel quel dans audit/helper.tpl (meme id) :
+   scope necessaire pour ne pas casser son pied de page (cf. note plus haut). */
+body.azteas-search #messagelistcontainer {
   flex: 1 1 auto;
   overflow-y: auto;
   height: auto !important; /* remplace le calc(100% - 40px) de .pane-upper-content, plus pertinent maintenant que .pane-upper est en colonne flex */
 }
 
-#messagelistfooter,
+body.azteas-search #messagelistfooter,
 .mail-list-footer {
   flex: 0 0 auto;
   position: relative;

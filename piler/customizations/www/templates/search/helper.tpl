@@ -70,7 +70,7 @@
        include_once DIR_BASE . 'templates/common/paging.tpl';
 
        if(FULL_GUI && Registry::get('auditor_user') == 1 && $session->get("sphx_query")) { ?>
-         <span class="ms-5"><a href="#" onclick="Piler.show_message('messagebox1', '<?php H($session->get("sphx_query")); ?>', 5);">sphinx</a></span>
+         <span class="ms-5"><a href="#" class="mail-list-saved-query-link" onclick="Piler.show_message('messagebox1', '<?php H($session->get("sphx_query")); ?>', 5);">sphinx</a></span>
 <?php  }
      } else { ?>
     <span class="text-danger"><?php print $text_none_found; ?></span>

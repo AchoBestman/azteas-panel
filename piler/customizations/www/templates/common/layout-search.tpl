@@ -19,7 +19,13 @@
   <?php print BRANDING_FAVICON; ?>
 </head>
 
-<body>
+<!-- Azteas : classe "azteas-search" utilisee pour scoper le CSS de mise en
+     page a 2 volets (azteas-panes.css) a cette page uniquement. layout-audit
+     et layout-audit-removal reutilisent EXACTEMENT les memes classes/id
+     (.container-panes, .pane-upper, #qqq, #messagelistfooter...), donc sans
+     ce scope nos regles de layout s'appliquaient aussi a l'audit et a la
+     page de suppression, ecrasant leur large tableau dans un volet etroit. -->
+<body class="azteas-search">
 
 <?php include_once DIR_BASE . 'templates/common/common.tpl'; ?>
 <?php include_once DIR_BASE . 'templates/search/modals.tpl'; ?>
