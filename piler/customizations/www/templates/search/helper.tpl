@@ -39,7 +39,7 @@
         <div class="mail-list-subject-row">
           <a href="#" class="mail-list-subject <?php if($message['deleted'] == 1) { ?>xxx<?php } ?>"><?php print $message['subject']; ?></a>
 <?php if(ENABLE_REFERENCES == 1 && $message['reference']) { ?>
-          <a href="#" <?php if($message['deleted'] == 1) { ?>class="xxx"<?php } ?> title="<?php print $text_conversation_available; ?>" onclick="$('#ref').val('<?php print $message['reference']; ?>'); Piler.expert(this); Piler.stop_propagation(event);">[+]</a>
+          <a href="#" class="mail-list-conversation-link <?php if($message['deleted'] == 1) { ?>xxx<?php } ?>" title="<?php print $text_conversation_available; ?>" onclick="$('#ref').val('<?php print $message['reference']; ?>'); Piler.expert(this); Piler.stop_propagation(event);">[+]</a>
 <?php } ?>
 <?php if($message['private'] == 1) { ?> <i class="bi bi-incognito private" title="private"></i><?php } ?>
 <?php if($message['marked_for_removal'] == 1) { ?> <span class="private">R</span><?php } ?>

@@ -25,18 +25,70 @@
   background: rgba(255, 255, 255, 0.28) !important;
 }
 
-/* Boutons de recherche (barre du haut + modale "Advanced search") a la
-   couleur de marque plutot que le rouge/bleu Bootstrap par defaut. */
+/* Logo rond plutot que rectangulaire (voir BRANDING_LOGO). */
+.branding_logo {
+  border-radius: 50%;
+}
+
+/* Options > Save / Load, et tout dropdown Bootstrap standard : hover a la
+   couleur de marque plutot que le bleu Piler par defaut (#2c5fc4). */
+.dropdown-menu li.dropdown-item:hover,
+a.dropdown-item:hover {
+  background-color: #140066 !important;
+}
+
+/* Boutons de recherche (barre du haut + modale "Advanced search") et tout
+   bouton .btn-primary (bouton "Save" des notes sur le detail d'un message,
+   boutons submit de settings.php, etc.) a la couleur de marque plutot que le
+   rouge/bleu Bootstrap par defaut. */
 .btn-search.btn-danger,
-#advancedSearchModal .btn-primary {
+.btn-primary {
   background-color: #140066 !important;
   border-color: #140066 !important;
 }
 
 .btn-search.btn-danger:hover,
-#advancedSearchModal .btn-primary:hover {
+.btn-primary:hover {
   background-color: #4f46e5 !important;
   border-color: #4f46e5 !important;
+}
+
+/* Lien "Refresh QR code" (settings.php) : pas de classe dediee dans le
+   template d'origine, cible par son onclick plutot que d'ajouter un fichier
+   settings.tpl juste pour ca. */
+a[onclick*="Piler.new_qr"] {
+  color: #140066;
+}
+
+/* Detail d'un message archive (message/view.tpl) : Download / View headers /
+   Print (et les autres liens de cette barre : restore, PDF, journal,
+   private, not spam) partagent tous la classe .messagelink, sauf Print qui
+   n'a pas cette classe dans le template d'origine (cible par onclick). */
+.messagelink,
+a[onclick*="Piler.print_div"] {
+  color: #140066;
+}
+
+.messagelink:hover,
+a[onclick*="Piler.print_div"]:hover {
+  color: #4f46e5;
+}
+
+/* Icone de piece jointe, dans le detail d'un message ET dans la liste
+   (mail-list-item-flags), meme classe .attachment dans les deux templates. */
+i.attachment {
+  color: #140066 !important;
+}
+
+/* Lien "[+]" (conversation disponible) dans la liste des messages. */
+.mail-list-conversation-link {
+  color: #140066;
+  text-decoration: none;
+}
+
+/* Liens de requetes sauvegardees (Options > Load, search/load.tpl). */
+.mail-list-saved-query-link {
+  color: #140066;
 }
 
 .container-panes {
