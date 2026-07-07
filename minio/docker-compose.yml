@@ -1,0 +1,53 @@
+services:
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9090"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      # URLs publiques annoncées par Minio (liens dans la console, présignation
+      # des URLs d'objets) — doivent correspondre aux domaines réellement
+      # utilisés en façade de Traefik.
+      - MINIO_BROWSER_REDIRECT_URL=https://minio.azteas.com
+      - MINIO_SERVER_URL=https://s3.azteas.com
+    volumes:
+      - minio_data:/data
+    networks:
+      - azteas-net
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+
+      # Console web — visualiser buckets/fichiers
+      - traefik.http.routers.minio-console.entrypoints=websecure
+      - traefik.http.routers.minio-console.rule=Host(`minio.azteas.com`)
+      - traefik.http.routers.minio-console.tls=true
+      - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
+      - traefik.http.routers.minio-console.middlewares=secure-headers@file,rate-limit-admin@file
+      - traefik.http.routers.minio-console.service=minio-console-svc
+      - traefik.http.services.minio-console-svc.loadbalancer.server.port=9090
+
+      # API S3 — accès programmatique (apps internes ET externes)
+      - traefik.http.routers.minio-api.entrypoints=websecure
+      - traefik.http.routers.minio-api.rule=Host(`s3.azteas.com`)
+      - traefik.http.routers.minio-api.tls=true
+      - traefik.http.routers.minio-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.minio-api.middlewares=secure-headers@file,rate-limit@file
+      - traefik.http.routers.minio-api.service=minio-api-svc
+      - traefik.http.services.minio-api-svc.loadbalancer.server.port=9000
+
+networks:
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  minio_data: {}

@@ -1,0 +1,119 @@
+services:
+
+  # ---- Provisioning (one-shot, idempotents) ----
+  # Ces 3 conteneurs créent/mettent à jour les identifiants dédiés de Plane
+  # sur les services partagés (postgresql/, rabbitmq/, minio/) puis
+  # s'arrêtent. Ils tournent à chaque déploiement — sans effet si les
+  # identifiants existent déjà, sauf resynchronisation du mot de passe.
+
+  plane-db-init:
+    image: postgres:17-alpine
+    container_name: plane-db-init
+    restart: "no"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - PLANE_DB_PASSWORD=${PLANE_DB_PASSWORD}
+    volumes:
+      - ./init/db-init.sql:/init/db-init.sql:ro
+      - ./init/db-init.sh:/init/db-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/db-init.sh"]
+
+  plane-mq-init:
+    image: curlimages/curl:latest
+    container_name: plane-mq-init
+    restart: "no"
+    environment:
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - PLANE_RABBITMQ_PASSWORD=${PLANE_RABBITMQ_PASSWORD}
+    volumes:
+      - ./init/mq-init.sh:/init/mq-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/mq-init.sh"]
+
+  plane-minio-init:
+    image: minio/mc:latest
+    container_name: plane-minio-init
+    restart: "no"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - PLANE_MINIO_PASSWORD=${PLANE_MINIO_PASSWORD}
+    volumes:
+      - ./init/minio-init.sh:/init/minio-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/minio-init.sh"]
+
+  # ---- Application ----
+
+  plane:
+    image: makeplane/plane-aio-community:${PLANE_VERSION:-stable}
+    container_name: plane
+    restart: unless-stopped
+    environment:
+      - DOMAIN_NAME=plane.azteas.com
+      - APP_PROTOCOL=https
+      # PostgreSQL et Redis : instances partagées (postgresql/, redis/).
+      # Redis index 1 réservé à Plane — voir redis/.env.example pour le
+      # registre des index déjà utilisés par d'autres services.
+      - DATABASE_URL=postgresql://plane:${PLANE_DB_PASSWORD}@postgresql:5432/plane
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      # RabbitMQ et Minio : instances partagées (rabbitmq/, minio/), avec
+      # vhost/bucket + user dédiés à Plane (créés par les *-init ci-dessus).
+      - AMQP_URL=amqp://plane:${PLANE_RABBITMQ_PASSWORD}@rabbitmq:5672/plane
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=plane
+      - AWS_SECRET_ACCESS_KEY=${PLANE_MINIO_PASSWORD}
+      - AWS_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_S3_BUCKET_NAME=plane
+      - BUCKET_NAME=plane
+      # Le start.sh de l'image AIO force USE_MINIO=0 en interne quoi qu'on
+      # mette ici : le stockage Minio passe par les variables AWS_S3_*
+      # génériques ci-dessus, pas par ce flag.
+      - USE_MINIO=0
+      - MINIO_ENDPOINT_SSL=0
+      - FILE_SIZE_LIMIT=20971520
+      - SECRET_KEY=${PLANE_SECRET_KEY}
+      - LIVE_SERVER_SECRET_KEY=${PLANE_LIVE_SECRET_KEY}
+      - GUNICORN_WORKERS=2
+    volumes:
+      - plane_logs:/app/logs
+      - plane_data:/app/data
+    depends_on:
+      plane-db-init:
+        condition: service_completed_successfully
+      plane-mq-init:
+        condition: service_completed_successfully
+      plane-minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.plane.entrypoints=websecure
+      - traefik.http.routers.plane.rule=Host(`plane.azteas.com`)
+      - traefik.http.routers.plane.tls=true
+      - traefik.http.routers.plane.tls.certresolver=letsencrypt
+      - traefik.http.routers.plane.middlewares=secure-headers@file,rate-limit@file
+      - traefik.http.services.plane-svc.loadbalancer.server.port=80
+    networks:
+      - azteas-net
+
+networks:
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  plane_logs: {}
+  plane_data: {}

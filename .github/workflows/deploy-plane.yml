@@ -1,0 +1,91 @@
+name: Deploy Plane
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "plane/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.PLANE_DB_PASSWORD }}" ]         && missing+=("secret: PLANE_DB_PASSWORD")
+          [ -z "${{ secrets.PLANE_RABBITMQ_PASSWORD }}" ]   && missing+=("secret: PLANE_RABBITMQ_PASSWORD")
+          [ -z "${{ secrets.PLANE_MINIO_PASSWORD }}" ]      && missing+=("secret: PLANE_MINIO_PASSWORD")
+          [ -z "${{ secrets.PLANE_SECRET_KEY }}" ]          && missing+=("secret: PLANE_SECRET_KEY")
+          [ -z "${{ secrets.PLANE_LIVE_SECRET_KEY }}" ]     && missing+=("secret: PLANE_LIVE_SECRET_KEY")
+          [ -z "${{ vars.POSTGRES_USER }}" ]                && missing+=("var: POSTGRES_USER (partagé postgresql/)")
+          [ -z "${{ secrets.POSTGRES_PASSWORD }}" ]         && missing+=("secret: POSTGRES_PASSWORD (partagé postgresql/)")
+          [ -z "${{ secrets.REDIS_PASSWORD }}" ]            && missing+=("secret: REDIS_PASSWORD (partagé redis/)")
+          [ -z "${{ vars.RABBITMQ_USER }}" ]                && missing+=("var: RABBITMQ_USER (partagé rabbitmq/)")
+          [ -z "${{ secrets.RABBITMQ_PASSWORD }}" ]         && missing+=("secret: RABBITMQ_PASSWORD (partagé rabbitmq/)")
+          [ -z "${{ vars.MINIO_ROOT_USER }}" ]              && missing+=("var: MINIO_ROOT_USER (partagé minio/)")
+          [ -z "${{ secrets.MINIO_ROOT_PASSWORD }}" ]       && missing+=("secret: MINIO_ROOT_PASSWORD (partagé minio/)")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Manquants :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env
+        run: |
+          cat > /tmp/plane.env << 'EOF'
+          PLANE_VERSION=${{ vars.PLANE_VERSION || 'stable' }}
+          PLANE_DB_PASSWORD=${{ secrets.PLANE_DB_PASSWORD }}
+          PLANE_RABBITMQ_PASSWORD=${{ secrets.PLANE_RABBITMQ_PASSWORD }}
+          PLANE_MINIO_PASSWORD=${{ secrets.PLANE_MINIO_PASSWORD }}
+          PLANE_SECRET_KEY=${{ secrets.PLANE_SECRET_KEY }}
+          PLANE_LIVE_SECRET_KEY=${{ secrets.PLANE_LIVE_SECRET_KEY }}
+          POSTGRES_USER=${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          RABBITMQ_USER=${{ vars.RABBITMQ_USER }}
+          RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+          MINIO_ROOT_USER=${{ vars.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+          EOF
+
+      - name: Sync plane/ vers le VPS
+        run: |
+          rsync -avz --delete --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            plane/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/plane/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/plane.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/plane/.env
+          rm -f /tmp/plane.env
+
+      - name: Démarrer Plane
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            chmod 600 /opt/azteas-panel/plane/.env
+            cd /opt/azteas-panel/plane
+            docker compose pull
+            docker compose up -d
+            docker compose ps

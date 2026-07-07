@@ -41,7 +41,10 @@ azteas-panel/
 ├── mariadb/                  # base de données MariaDB
 ├── postgresql/               # base de données PostgreSQL
 ├── mongodb/                  # base de données MongoDB
-├── redis/                    # cache Redis
+├── redis/                    # cache Redis (partagé)
+├── rabbitmq/                 # file de messages (partagée)
+├── minio/                    # stockage S3-compatible (partagé)
+├── plane/                    # gestionnaire de projet (Plane, AIO — utilise les services partagés ci-dessus)
 └── ...
 ```
 
@@ -103,8 +106,9 @@ Secrets GitHub Actions à définir dans les Settings du dépôt :
 2. **Traefik** → fondation de l'infrastructure (réseau + SSL)
 3. **Mailcow** → serveur mail
 4. **Piler** → archivage mail (dépend de Mailcow pour le BCC)
-5. **Bases de données** → MariaDB, PostgreSQL, MongoDB, Redis
+5. **Bases de données et services partagés** → MariaDB, PostgreSQL, MongoDB, Redis, RabbitMQ, Minio
 6. **Interfaces admin** → pgAdmin, phpMyAdmin, MongoExpress
+7. **Plane** → gestion de projet (utilise PostgreSQL/Redis/RabbitMQ/Minio partagés — doit être déployé après eux)
 
 ## Stockage
 
@@ -126,3 +130,7 @@ Domaine principal : `azteas.com`
 | `db.azteas.com` | pgAdmin |
 | `mongo.azteas.com` | MongoExpress |
 | `fail2ban.azteas.com` | Fail2ban UI |
+| `rabbitmq.azteas.com` | Dashboard RabbitMQ (accès restreint) |
+| `minio.azteas.com` | Console Minio (buckets, fichiers, accès restreint) |
+| `s3.azteas.com` | API S3 Minio (accès programmatique) |
+| `plane.azteas.com` | Plane (gestion de projet) |
