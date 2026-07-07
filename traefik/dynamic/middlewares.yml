@@ -80,3 +80,14 @@ http:
         regex: "^(https?://[^/]+)/user.*"
         replacement: "${1}/"
         permanent: false
+
+    # Plane (god-mode) : son <Router basename="/god-mode/"> (slash final)
+    # refuse de matcher l'URL sans slash final et ne rend rien — la page
+    # reste bloquée sur le loader statique indéfiniment (bug connu upstream,
+    # https://github.com/makeplane/plane/issues/8540). On corrige ici plutôt
+    # que d'attendre un correctif Plane.
+    redirect-godmode-trailing-slash:
+      redirectRegex:
+        regex: "^(https?://[^/]+)/god-mode$"
+        replacement: "${1}/god-mode/"
+        permanent: false
