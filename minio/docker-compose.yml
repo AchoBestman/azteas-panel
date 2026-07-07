@@ -9,7 +9,7 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       # URLs publiques annoncées par Minio (liens dans la console, présignation
-      # des URLs d'objets) — doivent correspondre aux domaines réellement
+      # des URLs d'objets) — doivent correspondre aux domaines réellement 
       # utilisés en façade de Traefik.
       - MINIO_BROWSER_REDIRECT_URL=https://minio.azteas.com
       - MINIO_SERVER_URL=https://s3.azteas.com
