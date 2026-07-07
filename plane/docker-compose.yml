@@ -80,7 +80,7 @@ services:
       # ses propres appels serveur→Minio ET pour les URLs pré-signées données au
       # navigateur pour l'upload direct. Un hôte Docker interne y est inutilisable
       # (non résolvable, et bloqué par la CSP de toute façon) — d'où l'endpoint
-      # public ici, déjà exposé via minio/docker-compose.yml.
+      # public ici, déjà exposé via minio/docker-compose.yml. 
       - AWS_S3_ENDPOINT_URL=https://s3.azteas.com
       - AWS_S3_BUCKET_NAME=plane
       - BUCKET_NAME=plane
