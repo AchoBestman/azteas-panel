@@ -74,14 +74,17 @@ services:
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=plane
       - AWS_SECRET_ACCESS_KEY=${PLANE_MINIO_PASSWORD}
-      - AWS_S3_ENDPOINT_URL=http://minio:9000
+      # Doit être l'endpoint PUBLIC, pas l'hôte Docker interne (http://minio:9000) :
+      # avec USE_MINIO=0 (forcé par le start.sh de l'image AIO, cf. storage.py de
+      # Plane), le backend réutilise AWS_S3_ENDPOINT_URL tel quel à la fois pour
+      # ses propres appels serveur→Minio ET pour les URLs pré-signées données au
+      # navigateur pour l'upload direct. Un hôte Docker interne y est inutilisable
+      # (non résolvable, et bloqué par la CSP de toute façon) — d'où l'endpoint
+      # public ici, déjà exposé via minio/docker-compose.yml.
+      - AWS_S3_ENDPOINT_URL=https://s3.azteas.com
       - AWS_S3_BUCKET_NAME=plane
       - BUCKET_NAME=plane
-      # Le start.sh de l'image AIO force USE_MINIO=0 en interne quoi qu'on
-      # mette ici : le stockage Minio passe par les variables AWS_S3_*
-      # génériques ci-dessus, pas par ce flag.
       - USE_MINIO=0
-      - MINIO_ENDPOINT_SSL=0
       - FILE_SIZE_LIMIT=20971520
       - SECRET_KEY=${PLANE_SECRET_KEY}
       - LIVE_SERVER_SECRET_KEY=${PLANE_LIVE_SECRET_KEY}
