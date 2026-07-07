@@ -37,6 +37,12 @@ Dans le `docker-compose.yml` de l'appli, ajouter une étape de provisioning
 one-shot (idempotente, donc rejouable à chaque déploiement) qui utilise le
 client `mc` avec les identifiants root pour créer bucket + user + policy.
 
+**Réutiliser l'image `minio/minio:latest` pour ce conteneur one-shot** (même
+tag que le service `minio` ci-dessus, donc déjà présente sur le VPS — aucun
+pull supplémentaire) en remplaçant son `entrypoint` par votre script : le
+binaire `mc` est déjà inclus dans l'image serveur, pas besoin de l'image
+`minio/mc` séparée.
+
 Exemple complet et fonctionnel : voir `plane/docker-compose.yml`, service
 `plane-minio-init`. Schéma général :
 
