@@ -87,5 +87,15 @@ jobs:
             chmod 600 /opt/azteas-panel/plane/.env
             cd /opt/azteas-panel/plane
             docker compose pull
-            docker compose up -d
+            # docker compose up -d peut échouer à recréer le conteneur "plane"
+            # en place ("invalid mount path") selon la version de Docker Compose
+            # installée sur le VPS — repli sur un stop+rm+up explicite, qui
+            # recrée le conteneur proprement sans toucher aux volumes nommés
+            # (les données persistent).
+            docker compose up -d || {
+              echo "⚠️  docker compose up -d a échoué, recréation explicite du conteneur plane..."
+              docker compose stop plane
+              docker compose rm -f plane
+              docker compose up -d
+            }
             docker compose ps
