@@ -1,0 +1,35 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - azteas-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.rabbitmq.entrypoints=websecure
+      - traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.azteas.com`)
+      - traefik.http.routers.rabbitmq.tls=true
+      - traefik.http.routers.rabbitmq.tls.certresolver=letsencrypt
+      - traefik.http.routers.rabbitmq.middlewares=secure-headers@file,rate-limit-admin@file
+      - traefik.http.services.rabbitmq-svc.loadbalancer.server.port=15672
+
+networks:
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  rabbitmq_data: {}
