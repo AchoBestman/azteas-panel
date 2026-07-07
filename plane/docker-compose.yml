@@ -5,9 +5,14 @@ services:
   # sur les services partagés (postgresql/, rabbitmq/, minio/) puis
   # s'arrêtent. Ils tournent à chaque déploiement — sans effet si les
   # identifiants existent déjà, sauf resynchronisation du mot de passe.
+  #
+  # Chacun réutilise l'image du service partagé qu'il provisionne (déjà
+  # présente sur le VPS, donc aucun pull supplémentaire) plutôt qu'une image
+  # "client" dédiée : l'entrypoint est remplacé par notre script, le serveur
+  # embarqué dans l'image ne démarre jamais.
 
   plane-db-init:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17 # même image que postgresql/ (= postgres + extension) → inclut psql/pg_isready
     container_name: plane-db-init
     restart: "no"
     environment:
@@ -22,7 +27,7 @@ services:
     entrypoint: ["/bin/sh", "/init/db-init.sh"]
 
   plane-mq-init:
-    image: curlimages/curl:latest
+    image: rabbitmq:3.13-management-alpine # même image que rabbitmq/ → inclut le CLI rabbitmqadmin
     container_name: plane-mq-init
     restart: "no"
     environment:
@@ -36,7 +41,7 @@ services:
     entrypoint: ["/bin/sh", "/init/mq-init.sh"]
 
   plane-minio-init:
-    image: minio/mc:latest
+    image: minio/minio:latest # même image que minio/ → le binaire mc est déjà inclus dans l'image serveur
     container_name: plane-minio-init
     restart: "no"
     environment:

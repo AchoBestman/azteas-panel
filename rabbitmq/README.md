@@ -18,21 +18,28 @@ Aucune appli ne doit s'y connecter directement avec ces identifiants.
 ## Ajouter un nouveau service consommateur
 
 Dans le `docker-compose.yml` du nouveau service, ajouter une étape de
-provisioning (conteneur one-shot) qui appelle l'API HTTP de gestion pour
-créer son vhost, son user et ses permissions — idempotent, donc rejouable à
-chaque déploiement (utile aussi pour la rotation de mot de passe).
+provisioning (conteneur one-shot) qui crée son vhost, son user et ses
+permissions — idempotent, donc rejouable à chaque déploiement (utile aussi
+pour la rotation de mot de passe).
+
+**Réutiliser l'image `rabbitmq:3.13-management-alpine` pour ce conteneur one-shot**
+(même tag que le service `rabbitmq` ci-dessus, donc déjà présente sur le VPS —
+aucun pull supplémentaire) en remplaçant son `entrypoint` par votre script :
+elle embarque le CLI `rabbitmqadmin`, qui parle à l'API de gestion sans
+dépendance externe (pas besoin d'une image `curl` séparée).
 
 Exemple complet et fonctionnel : voir `plane/docker-compose.yml`, service
-`plane-mq-init`. Le schéma général :
+`plane-mq-init` (et `plane/init/mq-init.sh`). Le schéma général :
 
 ```bash
-curl -sf -u "$RABBITMQ_USER:$RABBITMQ_PASSWORD" -X PUT "http://rabbitmq:15672/api/vhosts/<service>"
-curl -sf -u "$RABBITMQ_USER:$RABBITMQ_PASSWORD" -X PUT "http://rabbitmq:15672/api/users/<service>" \
-  -H "content-type: application/json" \
-  -d "{\"password\":\"<SERVICE_PASSWORD>\",\"tags\":\"\"}"
-curl -sf -u "$RABBITMQ_USER:$RABBITMQ_PASSWORD" -X PUT "http://rabbitmq:15672/api/permissions/<service>/<service>" \
-  -H "content-type: application/json" \
-  -d '{"configure":".*","write":".*","read":".*"}'
+rabbitmqadmin --host=rabbitmq --username="$RABBITMQ_USER" --password="$RABBITMQ_PASSWORD" \
+  declare vhost "name=<service>"
+
+rabbitmqadmin --host=rabbitmq --username="$RABBITMQ_USER" --password="$RABBITMQ_PASSWORD" \
+  declare user "name=<service>" "password=<SERVICE_PASSWORD>" "tags="
+
+rabbitmqadmin --host=rabbitmq --username="$RABBITMQ_USER" --password="$RABBITMQ_PASSWORD" \
+  declare permission "vhost=<service>" "user=<service>" "configure=.*" "write=.*" "read=.*"
 ```
 
 Le service consomme ensuite RabbitMQ via :
