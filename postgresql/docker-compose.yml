@@ -46,8 +46,11 @@ services:
     command:
       - |
         set -eu
-        chown 999:999 /var/log/postgresql
-        echo "Permissions /var/log/postgresql OK (999:999)."
+        # -R : un fichier créé par une tentative précédente (ex: root, avant
+        # ce fix) peut déjà exister dans le dossier — chowner seulement le
+        # dossier ne change pas son propriétaire.
+        chown -R 999:999 /var/log/postgresql
+        echo "Permissions /var/log/postgresql OK (999:999, récursif)."
 
   postgresql:
     image: pgvector/pgvector:pg17

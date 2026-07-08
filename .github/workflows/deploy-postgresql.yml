@@ -71,5 +71,12 @@ jobs:
             chmod 600 /opt/azteas-panel/postgresql/.env
             cd /opt/azteas-panel/postgresql
             docker compose pull
+            # docker compose up -d peut ne pas recréer un conteneur déjà
+            # existant même quand sa config a changé (ex: nouveau depends_on)
+            # selon la version de Docker Compose installée sur le VPS — même
+            # classe de souci que deploy-plane.yml. On force la recréation de
+            # postgresql pour être sûr qu'il repart avec la config à jour
+            # (les volumes nommés ne sont pas touchés, aucune perte de données).
+            docker compose up -d --force-recreate postgresql
             docker compose up -d
             docker compose ps
