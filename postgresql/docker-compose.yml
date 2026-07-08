@@ -29,12 +29,34 @@ services:
         chown 999:999 /certs/server.key /certs/server.crt
         chmod 600 /certs/server.key
 
+  # Crée/corrige les permissions du dossier de log bind-monté AVANT que
+  # postgresql démarre. Sans ça, Docker crée /var/log/postgresql sur l'hôte
+  # appartenant à root au premier bind-mount, et Postgres (uid 999, cf.
+  # postgresql-tls-init ci-dessus) ne peut pas y écrire — logging_collector
+  # échoue à l'ouverture du fichier, ce qui fait échouer le DÉMARRAGE ENTIER
+  # de Postgres (pas juste un warning), avec effet domino sur tout ce qui
+  # partage cette instance (Dokploy, Plane, pgAdmin, apanel).
+  postgresql-logdir-init:
+    image: alpine:3.20
+    container_name: postgresql-logdir-init
+    restart: "no"
+    volumes:
+      - /var/log/postgresql:/var/log/postgresql
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        chown 999:999 /var/log/postgresql
+        echo "Permissions /var/log/postgresql OK (999:999)."
+
   postgresql:
     image: pgvector/pgvector:pg17
     container_name: postgresql
     restart: unless-stopped
     depends_on:
       postgresql-tls-init:
+        condition: service_completed_successfully
+      postgresql-logdir-init:
         condition: service_completed_successfully
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
