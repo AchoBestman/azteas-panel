@@ -29,12 +29,38 @@ services:
         # échec de démarrage plutôt qu'une permission trop stricte.
         chmod 644 /certs/server.key
 
+  # --aclfile exige que le fichier existe déjà — Redis refuse de démarrer
+  # sinon ("Error loading ACLs... No such file or directory"), il ne le crée
+  # pas tout seul. Le crée vide s'il est absent (ACL SAVE, dans
+  # apanel-redis-init, le remplira ensuite) ; ne touche jamais un fichier déjà
+  # rempli. 666 : UID d'exécution de redis-stack-server non garanti (cf.
+  # redis-tls-init ci-dessus), même raisonnement.
+  redis-aclfile-init:
+    image: alpine:3.20
+    container_name: redis-aclfile-init
+    restart: "no"
+    volumes:
+      - redis_data:/data
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        if [ ! -f /data/users.acl ]; then
+          touch /data/users.acl
+          chmod 666 /data/users.acl
+          echo "/data/users.acl créé (vide)."
+        else
+          echo "/data/users.acl déjà présent, inchangé."
+        fi
+
   redis:
     image: redis/redis-stack-server:latest
     container_name: redis
     restart: unless-stopped
     depends_on:
       redis-tls-init:
+        condition: service_completed_successfully
+      redis-aclfile-init:
         condition: service_completed_successfully
     environment:
       # Port 6379 en clair conservé pour les consommateurs internes (Plane,
