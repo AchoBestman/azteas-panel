@@ -87,5 +87,10 @@ jobs:
             chmod 600 /opt/azteas-panel/traefik/dynamic/.htpasswd
             cd /opt/azteas-panel/traefik
             docker compose pull
+            # Ajouter un port publié (ex: entryPoints TCP postgres/redis-tls)
+            # nécessite une recréation complète du conteneur — docker compose
+            # up -d seul ne le fait pas toujours (même souci que
+            # deploy-postgresql.yml). On force la recréation de traefik.
+            docker compose up -d --force-recreate traefik
             docker compose up -d
             docker compose ps
