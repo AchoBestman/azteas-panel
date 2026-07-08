@@ -1,7 +1,7 @@
 services:
   # ---- Provisioning (one-shot, idempotent) ----
   # Certificat TLS auto-signé pour l'accès externe (apanel/ via
-  # Traefik TCP passthrough). Ne régénère jamais un certificat existant.
+  # Traefik TCP passthrough). Ne régénère jamais un certificat existant .
   redis-tls-init:
     image: alpine:3.20
     container_name: redis-tls-init

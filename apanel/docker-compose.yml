@@ -8,7 +8,7 @@ services:
   # existent déjà (sauf resynchronisation du mot de passe).
   #
   # Réutilisent l'image du service partagé qu'ils provisionnent (déjà
-  # présente sur le VPS) plutôt qu'une image "client" dédiée — voir plane/
+  # présente sur le VPS) plutôt qu'une image "client" dédiée — voir plane/ 
   # pour le même principe.
 
   apanel-db-init:
