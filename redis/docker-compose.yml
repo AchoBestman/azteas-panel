@@ -40,17 +40,16 @@ services:
       # Port 6379 en clair conservé pour les consommateurs internes (Plane,
       # redis-commander, sur azteas-net) ; port 6380 en TLS pour l'accès
       # externe via Traefik TCP passthrough (apanel/Vercel).
-      # Commandes dangereuses renommées (pas désactivées : ${REDIS_RENAME_SUFFIX}
-      # doit rester connu des seuls admins qui en ont besoin en maintenance).
+      # Commandes dangereuses bloquées via l'ACL dédiée (-@dangerous, cf.
+      # apanel/init/redis-acl-init.sh) plutôt que --rename-command : les
+      # modules de redis-stack-server (RediSearch, RedisJSON...) appellent
+      # CONFIG en interne via l'API module, et le renommer les fait planter
+      # (segfault confirmé en prod — RM_CallReplyArrayElement sur une
+      # réponse d'erreur "unknown command").
       - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes --databases 16
         --maxmemory 1000mb --maxmemory-policy allkeys-lru
         --tls-port 6380 --tls-cert-file /certs/server.crt --tls-key-file /certs/server.key --tls-ca-cert-file /certs/server.crt
         --aclfile /data/users.acl
-        --rename-command FLUSHALL FLUSHALL_${REDIS_RENAME_SUFFIX}
-        --rename-command FLUSHDB FLUSHDB_${REDIS_RENAME_SUFFIX}
-        --rename-command CONFIG CONFIG_${REDIS_RENAME_SUFFIX}
-        --rename-command KEYS KEYS_${REDIS_RENAME_SUFFIX}
-        --rename-command SHUTDOWN SHUTDOWN_${REDIS_RENAME_SUFFIX}
     volumes:
       - redis_data:/data
       - redis_certs:/certs:ro
@@ -81,6 +80,11 @@ services:
     image: redis:7-alpine
     container_name: redis-acl-log-exporter
     restart: unless-stopped
+    # Root explicite : évite de dépendre de l'UID par défaut de l'image (pas
+    # garanti côté alpine) pour écrire dans /var/log/redis bind-monté — plus
+    # de prérequis manuel de permissions sur le VPS (même classe de bug que
+    # /var/log/postgresql, corrigé en amont).
+    user: "0:0"
     depends_on:
       redis:
         condition: service_healthy

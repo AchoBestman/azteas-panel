@@ -64,5 +64,10 @@ jobs:
             chmod 600 /opt/azteas-panel/redis/.env
             cd /opt/azteas-panel/redis
             docker compose pull
+            # docker compose up -d ne recrée pas toujours un conteneur
+            # existant même quand sa config change (même souci déjà rencontré
+            # sur postgresql/traefik) — on force la recréation des services
+            # dont les arguments de démarrage évoluent le plus souvent.
+            docker compose up -d --force-recreate redis redis-acl-log-exporter
             docker compose up -d
             docker compose ps
