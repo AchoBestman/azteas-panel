@@ -1,0 +1,72 @@
+services:
+  # ---- Provisioning (one-shot, idempotents) ----
+  # apanel (Vercel, TanStack Start + Prisma + BullMQ) n'a pas de
+  # conteneur applicatif ici — il tourne sur Vercel. Ces 2 conteneurs créent/
+  # resynchronisent uniquement ses identifiants dédiés sur les services
+  # partagés (postgresql/, redis/) exposés en externe via Traefik TCP
+  # passthrough. Tournent à chaque déploiement, sans effet si les identifiants
+  # existent déjà (sauf resynchronisation du mot de passe).
+  #
+  # Réutilisent l'image du service partagé qu'ils provisionnent (déjà
+  # présente sur le VPS) plutôt qu'une image "client" dédiée — voir plane/
+  # pour le même principe.
+
+  apanel-db-init:
+    image: pgvector/pgvector:pg17
+    container_name: apanel-db-init
+    restart: "no"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - APANEL_DB_PASSWORD=${APANEL_DB_PASSWORD}
+    volumes:
+      - ./init/db-init.sql:/init/db-init.sql:ro
+      - ./init/db-init.sh:/init/db-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/db-init.sh"]
+
+  apanel-redis-init:
+    image: redis/redis-stack-server:latest
+    container_name: apanel-redis-init
+    restart: "no"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - APANEL_REDIS_PASSWORD=${APANEL_REDIS_PASSWORD}
+    volumes:
+      - ./init/redis-acl-init.sh:/init/redis-acl-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/redis-acl-init.sh"]
+
+  # Force le TLS pour le role apanel dans pg_hba.conf (accessible depuis
+  # l'extérieur via Traefik TCP, cf. postgresql/docker-compose.yml). Monte le
+  # MEME volume que le service postgresql (external, nom réel généré par
+  # Docker Compose = "<project>_<volume>", project="postgresql" puisque
+  # déployé depuis /opt/azteas-panel/postgresql — voir deploy-postgresql.yml).
+  apanel-pg-hba-init:
+    image: pgvector/pgvector:pg17
+    container_name: apanel-pg-hba-init
+    restart: "no"
+    depends_on:
+      apanel-db-init:
+        condition: service_completed_successfully
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+      - ./init/pg-hba-init.sh:/init/pg-hba-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/pg-hba-init.sh"]
+
+networks:
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  postgresql_data:
+    external: true
+    name: postgresql_postgresql_data

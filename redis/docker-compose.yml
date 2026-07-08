@@ -1,12 +1,59 @@
 services:
+  # ---- Provisioning (one-shot, idempotent) ----
+  # Certificat TLS auto-signé pour l'accès externe (apanel/ via
+  # Traefik TCP passthrough). Ne régénère jamais un certificat existant.
+  redis-tls-init:
+    image: alpine:3.20
+    container_name: redis-tls-init
+    restart: "no"
+    volumes:
+      - redis_certs:/certs
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        apk add --no-cache openssl >/dev/null
+        if [ ! -f /certs/server.crt ]; then
+          openssl req -new -x509 -days 825 -nodes \
+            -newkey rsa:2048 \
+            -keyout /certs/server.key -out /certs/server.crt \
+            -subj "/CN=${REDIS_TLS_CN:-redis-tcp.azteas.com}"
+          echo "Certificat TLS Redis généré (CN=${REDIS_TLS_CN:-redis-tcp.azteas.com})."
+        else
+          echo "Certificat TLS Redis déjà présent, inchangé."
+        fi
+        # 644 (et non 600 comme pour Postgres) : redis-stack-server ne fait
+        # pas de vérification stricte des permissions de sa clé TLS, mais son
+        # UID d'exécution exact n'est pas garanti (pas de USER dans l'image) —
+        # à défaut de le confirmer, on privilégie la lisibilité pour éviter un
+        # échec de démarrage plutôt qu'une permission trop stricte.
+        chmod 644 /certs/server.key
+
   redis:
     image: redis/redis-stack-server:latest
     container_name: redis
     restart: unless-stopped
+    depends_on:
+      redis-tls-init:
+        condition: service_completed_successfully
     environment:
-      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes --databases 16 --maxmemory 1000mb --maxmemory-policy allkeys-lru
+      # Port 6379 en clair conservé pour les consommateurs internes (Plane,
+      # redis-commander, sur azteas-net) ; port 6380 en TLS pour l'accès
+      # externe via Traefik TCP passthrough (apanel/Vercel).
+      # Commandes dangereuses renommées (pas désactivées : ${REDIS_RENAME_SUFFIX}
+      # doit rester connu des seuls admins qui en ont besoin en maintenance).
+      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD} --appendonly yes --databases 16
+        --maxmemory 1000mb --maxmemory-policy allkeys-lru
+        --tls-port 6380 --tls-cert-file /certs/server.crt --tls-key-file /certs/server.key --tls-ca-cert-file /certs/server.crt
+        --aclfile /data/users.acl
+        --rename-command FLUSHALL FLUSHALL_${REDIS_RENAME_SUFFIX}
+        --rename-command FLUSHDB FLUSHDB_${REDIS_RENAME_SUFFIX}
+        --rename-command CONFIG CONFIG_${REDIS_RENAME_SUFFIX}
+        --rename-command KEYS KEYS_${REDIS_RENAME_SUFFIX}
+        --rename-command SHUTDOWN SHUTDOWN_${REDIS_RENAME_SUFFIX}
     volumes:
       - redis_data:/data
+      - redis_certs:/certs:ro
     networks:
       - redis_net
       - coolify
@@ -16,6 +63,48 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      # Redis 6+ négocie son propre TLS sur le port 6380 (pas de SNI côté
+      # client) — Traefik route par port en passthrough, comme pour Postgres.
+      - traefik.tcp.routers.redis-tcp.rule=HostSNI(`*`)
+      - traefik.tcp.routers.redis-tcp.entrypoints=redis-tls
+      - traefik.tcp.routers.redis-tcp.tls.passthrough=true
+      - traefik.tcp.services.redis-tcp.loadbalancer.server.port=6380
+
+  # Traduit `ACL LOG` (échecs AUTH) en lignes de log exploitables par la jail
+  # fail2ban redis-auth — Redis ne loggue nativement aucun échec d'auth dans
+  # un fichier. Poll best-effort (5s) ; purge ACL LOG après chaque lecture
+  # pour ne pas réémettre indéfiniment les mêmes entrées.
+  redis-acl-log-exporter:
+    image: redis:7-alpine
+    container_name: redis-acl-log-exporter
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - /var/log/redis:/var/log/redis
+    networks:
+      - redis_net
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        while true; do
+          LOG=$$(redis-cli -h redis -a "$$REDIS_PASSWORD" --no-auth-warning ACL LOG 2>/dev/null || true)
+          if echo "$$LOG" | grep -q 'reason=auth'; then
+            TS=$$(date '+%Y-%m-%d %H:%M:%S')
+            echo "$$LOG" | grep -oE 'addr=[0-9.]+' | cut -d= -f2 | sort -u | while read -r ip; do
+              echo "$$TS redis AUTH_FAILED host=$$ip" >> /var/log/redis/redis-auth.log
+            done
+            redis-cli -h redis -a "$$REDIS_PASSWORD" --no-auth-warning ACL LOG RESET > /dev/null
+          fi
+          sleep 5
+        done
 
   redis-commander:
     image: rediscommander/redis-commander:latest
@@ -51,3 +140,4 @@ networks:
 
 volumes:
   redis_data: {}
+  redis_certs: {}

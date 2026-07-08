@@ -23,7 +23,7 @@ enabled   = true
 filter    = piler-weblogin
 logpath   = /var/log/traefik/access.log
 port      = http,https
-maxretry  = 3
+maxretry  = 7
 findtime  = 600
 
 # ============================================================
@@ -34,7 +34,7 @@ enabled   = true
 filter    = mailcow-weblogin
 logpath   = /var/log/traefik/access.log
 port      = http,https
-maxretry  = 3
+maxretry  = 7
 findtime  = 600
 
 # ============================================================
@@ -45,7 +45,7 @@ enabled   = true
 filter    = traefik-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-maxretry  = 3
+maxretry  = 7
 findtime  = 600
 
 # ============================================================
@@ -56,7 +56,7 @@ enabled   = true
 filter    = grafana-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-maxretry  = 3
+maxretry  = 7
 findtime  = 600
 
 # ============================================================
@@ -67,7 +67,7 @@ enabled   = true
 filter    = coolify-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-maxretry  = 3
+maxretry  = 7
 findtime  = 600
 
 # ============================================================
@@ -78,22 +78,46 @@ enabled   = true
 filter    = fail2ban-ui-auth
 logpath   = /var/log/traefik/access.log
 port      = http,https
-maxretry  = 3
+maxretry  = 7
 findtime  = 600
 
 # ============================================================
-# JAIL 7 - SSH (ban plat sur tous les ports, pas d'escalade)
+# JAIL 7 - PostgreSQL (accès externe via Traefik TCP, ex: agent-suite-admin)
+# ============================================================
+[postgres-auth]
+enabled   = true
+filter    = postgres-auth
+logpath   = /var/log/postgresql/postgresql.log
+port      = 5432
+maxretry  = 7
+findtime  = 600
+
+# ============================================================
+# JAIL 8 - Redis (accès externe via Traefik TCP, ex: agent-suite-admin)
+# Alimentée par le sidecar redis-acl-log-exporter (voir redis/docker-compose.yml)
+# qui traduit `ACL LOG` en lignes de log exploitables par fail2ban.
+# ============================================================
+[redis-auth]
+enabled   = true
+filter    = redis-auth
+logpath   = /var/log/redis/redis-auth.log
+port      = 6380
+maxretry  = 7
+findtime  = 600
+
+# ============================================================
+# JAIL 9 - SSH (ban plat sur tous les ports, pas d'escalade)
 # ============================================================
 [sshd]
 enabled            = true
 banaction          = %(banaction_allports)s
-maxretry           = 3
+maxretry           = 7
 findtime           = 600
 bantime            = 86400
 bantime.increment  = false
 
 # ============================================================
-# JAIL 8 - Récidivistes : banni définitivement après 5 bans
+# JAIL 10 - Récidivistes : banni définitivement après 5 bans
 # (couvre l'échelon "30 jours" de l'escalade ci-dessus, insiste sur une
 # même jail OU cumule des bans sur plusieurs jails différentes)
 # ============================================================

@@ -21,6 +21,17 @@ entryPoints:
         certResolver: letsencrypt
         options: default
 
+  # Entrypoints TCP dédiés — routage passthrough uniquement (Traefik ne
+  # termine pas le TLS ici, chaque service négocie le sien). Utilisés pour
+  # l'accès externe à PostgreSQL/Redis (ex: apanel/Vercel), voir
+  # les labels traefik.tcp.* dans postgresql/docker-compose.yml et
+  # redis/docker-compose.yml.
+  postgres:
+    address: ":5432"
+
+  redis-tls:
+    address: ":6380"
+
 
 certificatesResolvers:
   # Pour azteas.com et sous-domaines (Cloudflare DNS)

@@ -45,6 +45,7 @@ azteas-panel/
 ├── rabbitmq/                 # file de messages (partagée)
 ├── minio/                    # stockage S3-compatible (partagé)
 ├── plane/                    # gestionnaire de projet (Plane, AIO — utilise les services partagés ci-dessus)
+├── apanel/                   # provisioning uniquement (app déployée sur Vercel — utilise postgresql/redis à distance via Traefik TCP)
 └── ...
 ```
 
@@ -109,6 +110,7 @@ Secrets GitHub Actions à définir dans les Settings du dépôt :
 5. **Bases de données et services partagés** → MariaDB, PostgreSQL, MongoDB, Redis, RabbitMQ, Minio
 6. **Interfaces admin** → pgAdmin, phpMyAdmin, MongoExpress
 7. **Plane** → gestion de projet (utilise PostgreSQL/Redis/RabbitMQ/Minio partagés — doit être déployé après eux)
+8. **Apanel** (provisioning) → app externe sur Vercel, utilise PostgreSQL/Redis partagés à distance (doit être déployé après eux)
 
 ## Stockage
 
@@ -134,3 +136,5 @@ Domaine principal : `azteas.com`
 | `minio.azteas.com` | Console Minio (buckets, fichiers, accès restreint) |
 | `s3.azteas.com` | API S3 Minio (accès programmatique) |
 | `plane.azteas.com` | Plane (gestion de projet) |
+| `pg-tcp.azteas.com` | PostgreSQL — accès externe TCP (pas HTTP), ex: apanel/Vercel |
+| `redis-tcp.azteas.com` | Redis — accès externe TCP TLS (pas HTTP), ex: apanel/Vercel |

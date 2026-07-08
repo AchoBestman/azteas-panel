@@ -1,0 +1,76 @@
+name: Deploy Apanel (provisioning)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apanel/**"
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: azteas-panel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Valider les variables et secrets requis
+        run: |
+          missing=()
+          [ -z "${{ secrets.APANEL_DB_PASSWORD }}" ]    && missing+=("secret: APANEL_DB_PASSWORD")
+          [ -z "${{ secrets.APANEL_REDIS_PASSWORD }}" ] && missing+=("secret: APANEL_REDIS_PASSWORD")
+          [ -z "${{ vars.POSTGRES_USER }}" ]                 && missing+=("var: POSTGRES_USER (partagé postgresql/)")
+          [ -z "${{ secrets.POSTGRES_PASSWORD }}" ]          && missing+=("secret: POSTGRES_PASSWORD (partagé postgresql/)")
+          [ -z "${{ secrets.REDIS_PASSWORD }}" ]             && missing+=("secret: REDIS_PASSWORD (partagé redis/)")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Manquants :"
+            for m in "${missing[@]}"; do echo "   - $m"; done
+            exit 1
+          fi
+          echo "✅ Toutes les variables sont définies"
+
+      - name: Configurer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Générer le .env
+        run: |
+          cat > /tmp/apanel.env << 'EOF'
+          POSTGRES_USER=${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          APANEL_DB_PASSWORD=${{ secrets.APANEL_DB_PASSWORD }}
+          APANEL_REDIS_PASSWORD=${{ secrets.APANEL_REDIS_PASSWORD }}
+          EOF
+
+      - name: Sync apanel/ vers le VPS
+        run: |
+          rsync -avz --delete --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            apanel/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/apanel/
+
+      - name: Déployer le .env
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            /tmp/apanel.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/azteas-panel/apanel/.env
+          rm -f /tmp/apanel.env
+
+      - name: Provisionner (conteneurs one-shot)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            chmod 600 /opt/azteas-panel/apanel/.env
+            cd /opt/azteas-panel/apanel
+            docker compose pull
+            docker compose up --force-recreate
+            docker compose ps -a

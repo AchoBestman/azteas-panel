@@ -6,6 +6,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      # Passthrough TCP vers PostgreSQL/Redis (accès externe, ex:
+      # apanel/Vercel) — voir entryPoints "postgres"/"redis-tls"
+      # dans traefik.yml et les labels traefik.tcp.* des services concernés.
+      - "5432:5432"
+      - "6380:6380"
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     volumes:

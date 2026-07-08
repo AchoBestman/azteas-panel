@@ -7,7 +7,8 @@ set -euo pipefail
 # cd /opt/azteas-panel/fail2ban && bash setup-fail2ban.sh
 #
 # Protège via le log Traefik : Piler, Mailcow, dashboard Traefik
-# Protège également SSH directement
+# Protège également SSH directement, ainsi que PostgreSQL et Redis (accès
+# externe via Traefik TCP passthrough) via leurs propres logs
 # ============================================================
 
 FAIL2BAN_DIR="/opt/azteas-panel/fail2ban"
@@ -30,8 +31,10 @@ fi
 source "$ENV_FILE" > /dev/null 2>&1
 
 # Créer les fichiers de log si absents (fail2ban échoue s'ils n'existent pas)
-sudo mkdir -p /var/log/traefik
+sudo mkdir -p /var/log/traefik /var/log/postgresql /var/log/redis
 sudo touch /var/log/traefik/access.log
+sudo touch /var/log/postgresql/postgresql.log
+sudo touch /var/log/redis/redis-auth.log
 sudo touch /var/log/fail2ban.log
 sudo touch /var/log/piler-backup.log
 sudo touch /var/log/mailcow-backup.log

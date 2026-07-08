@@ -107,3 +107,31 @@ labels:
   - "traefik.http.routers.MON_SERVICE.tls.certresolver=letsencrypt"
   - "traefik.http.routers.MON_SERVICE.middlewares=secure-headers@file"
 ```
+
+## Exposer un protocole non-HTTP (TCP passthrough)
+
+Pour un service qui a besoin d'un accès externe direct sans passer par HTTP
+(ex: PostgreSQL/Redis pour `apanel/` déployé sur Vercel) :
+
+1. Ajouter un `entryPoint` TCP dédié dans `traefik.yml` (ex: `:5432`).
+2. Publier le port correspondant dans `ports:` de ce `docker-compose.yml`.
+3. `sudo ufw-docker allow traefik <port>` sur le VPS (voir `scripts/init-vps.sh`).
+4. Labels sur le service cible (pas sur Traefik) :
+
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.docker.network=azteas-net"
+  - "traefik.tcp.routers.MON_SERVICE.rule=HostSNI(`*`)"
+  - "traefik.tcp.routers.MON_SERVICE.entrypoints=MON_ENTRYPOINT"
+  - "traefik.tcp.routers.MON_SERVICE.tls.passthrough=true"
+  - "traefik.tcp.services.MON_SERVICE.loadbalancer.server.port=<port interne>"
+```
+
+`tls.passthrough=true` : Traefik route les octets bruts sans toucher au TLS —
+c'est le service lui-même qui doit avoir son propre certificat (protocoles
+comme Postgres qui négocient le TLS après un échange en clair initial ne sont
+pas compatibles avec une terminaison TLS côté Traefik). `HostSNI(`*`)` est le
+routage par défaut quand le protocole n'envoie pas de SNI (cas de Postgres et
+Redis). Voir `postgresql/docker-compose.yml` et `redis/docker-compose.yml`
+pour un exemple complet, génération de certificat incluse.

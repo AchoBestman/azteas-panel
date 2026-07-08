@@ -38,6 +38,9 @@ newgrp docker
 # ----------------------------------------------------------
 sudo ufw-docker allow traefik 80
 sudo ufw-docker allow traefik 443
+# Passthrough TCP PostgreSQL/Redis (accès externe, ex: apanel/Vercel)
+sudo ufw-docker allow traefik 5432
+sudo ufw-docker allow traefik 6380
 
 # ----------------------------------------------------------
 # 5. Autoriser sudo sans mot de passe pour Coolify (déploiements)
