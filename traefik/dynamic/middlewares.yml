@@ -69,6 +69,14 @@ http:
         average: 1000
         burst: 500
 
+    # Redirection HTTP → HTTPS (référencée depuis les labels Docker comme
+    # redirect-to-https@file — le provider Docker ne peut pas définir de
+    # middleware réutilisable entre services).
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
     # Redirige /user vers / au lieu d'un blocage brutal (403) : seuls les
     # admins doivent utiliser l'interface Mailcow (via /admin), pas les
     # mailbox users. La page de login Mailcow (/) redirige elle-même les
