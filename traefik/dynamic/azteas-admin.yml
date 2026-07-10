@@ -1,0 +1,15 @@
+http:
+  routers:
+    azteas-admin:
+      rule: "Host(`admin.azteas.com`)"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      service: azteas-admin-svc
+
+  services:
+    azteas-admin-svc:
+      loadBalancer:
+        servers:
+          - url: "http://azteas-admin:3000"
