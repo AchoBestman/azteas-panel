@@ -4,6 +4,8 @@
 # terminer ce TLS (même principe que postgres/redis-tls dans traefik.yml).
 # Incus tourne sur l'hôte (pas un conteneur Docker) — cible
 # host.docker.internal, résolu via l'extra_hosts du service traefik.
+# Port 9443, pas 8443 : 8443 est déjà pris par Mailcow (HTTPS_PORT) sur ce
+# même VPS (voir .env.example racine et incus/install.sh).
 tcp:
   routers:
     incus:
@@ -18,4 +20,4 @@ tcp:
     incus-svc:
       loadBalancer:
         servers:
-          - address: "host.docker.internal:8443"
+          - address: "host.docker.internal:9443"

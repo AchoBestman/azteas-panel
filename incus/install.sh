@@ -87,13 +87,33 @@ fi
 
 # ---- API HTTPS accessible depuis Traefik (conteneur Docker, via
 #      host.docker.internal) — commande idempotente, sans risque à
-#      relancer à chaque déploiement.
-sudo incus config set core.https_address 0.0.0.0:8443
+#      relancer à chaque déploiement. Port 9443, pas 8443 : 8443 est déjà
+#      pris par Mailcow (HTTPS_PORT) sur ce même VPS.
+sudo incus config set core.https_address 0.0.0.0:9443
+
+# ---- Autoriser SEULEMENT azteas-net (le réseau Docker de Traefik) à
+#      atteindre le port 9443 de l'hôte — pas le reste d'internet. C'est
+#      l'inverse du rôle de ufw-docker (déjà utilisé ailleurs, cf.
+#      scripts/init-vps.sh) : ufw-docker gère l'accès externe à un port
+#      PUBLIÉ par un conteneur, alors qu'ici c'est un conteneur (Traefik)
+#      qui doit atteindre un processus sur l'hôte — ufw-docker ne
+#      s'applique donc pas à ce sens de trafic, une règle ufw normale
+#      scoped sur le sous-réseau suffit. "ufw allow" est idempotent
+#      (ignore les doublons), donc sans risque à chaque déploiement.
+AZTEAS_NET_SUBNET=$(sudo docker network inspect azteas-net --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || true)
+if [ -n "$AZTEAS_NET_SUBNET" ]; then
+    sudo ufw allow from "$AZTEAS_NET_SUBNET" to any port 9443 proto tcp comment "Traefik -> Incus (azteas-net)"
+    echo "    ufw : ${AZTEAS_NET_SUBNET} -> 9443/tcp autorisé (idempotent)"
+else
+    echo "⚠️  Sous-réseau azteas-net introuvable (docker network inspect a"
+    echo "    échoué) — autoriser manuellement :"
+    echo "    sudo ufw allow from <subnet-azteas-net> to any port 9443 proto tcp"
+fi
 
 echo ""
 echo "==> Setup terminé."
-echo "    Vérifier que le port 8443 n'est PAS accessible depuis internet"
-echo "    (seulement depuis Traefik) : sudo ufw status | grep 8443"
+echo "    Vérifier que le port 9443 n'est PAS accessible depuis internet"
+echo "    (seulement depuis azteas-net) : sudo ufw status | grep 9443"
 echo ""
 echo "    Première connexion à https://cpanel.azteas.com :"
 echo "      sudo incus config trust add admin"

@@ -70,7 +70,9 @@ un nouveau pool.
 
 ## Réseau : Traefik en TCP passthrough
 
-L'API HTTPS d'Incus (port `8443`) utilise l'authentification mutuelle par
+L'API HTTPS d'Incus (port `9443` — pas le 8443 par défaut d'Incus, déjà pris
+par Mailcow/`HTTPS_PORT` sur ce VPS, voir `.env.example` racine) utilise
+l'authentification mutuelle par
 certificat client — Traefik ne peut pas terminer ce TLS et le relayer en
 HTTP classique comme pour les autres services. Le routage suit donc le même
 principe que `postgres`/`redis-tls` dans `traefik/traefik.yml` :
@@ -81,7 +83,7 @@ Postgres — `cpanel.azteas.com` partage le port 443 avec le reste).
 
 Incus tourne sur l'hôte, pas dans un conteneur Docker : `traefik/docker-compose.yml`
 ajoute `extra_hosts: host.docker.internal:host-gateway` pour que le
-conteneur Traefik puisse atteindre le port 8443 de l'hôte.
+conteneur Traefik puisse atteindre le port 9443 de l'hôte.
 
 **Conséquence** : une route TCP passthrough ne passe pas par les
 middlewares HTTP Traefik (`auth-basic`, `rate-limit-admin` — Traefik ne
@@ -93,11 +95,23 @@ atteignant le port.
 
 ## ⚠️ À vérifier après le premier déploiement (non testable depuis ce repo)
 
-- Que le port `8443` n'est **pas** joignable depuis internet (seulement
-  depuis le conteneur Traefik via `host.docker.internal`) :
-  `sudo ufw status | grep 8443`. Si besoin, ajouter une règle `ufw deny
-  8443/tcp` explicite — Docker manipule parfois iptables indépendamment
-  d'ufw, donc à confirmer sur le VPS réel.
+- Que le port `9443` n'est **pas** joignable depuis internet, et **est**
+  joignable depuis Traefik. `install.sh` ajoute automatiquement une règle
+  ufw scoped au sous-réseau `azteas-net` (détecté via `docker network
+  inspect`) — pas d'ouverture au reste d'internet. Vérifier après coup :
+  `sudo ufw status | grep 9443` doit montrer une règle limitée au
+  sous-réseau `azteas-net`, jamais `Anywhere`. Si `docker network inspect`
+  échoue au moment du déploiement (réseau pas encore créé, par exemple),
+  le script avertit au lieu d'improviser une règle trop large — voir la
+  sortie d'`install.sh` sur ce point précis.
+- Que `ufw-docker` n'est **pas** ce qu'il faut ici : il gère l'accès externe
+  à un port *publié par un conteneur*, alors que 9443 est un port de
+  l'hôte atteint *par* un conteneur (Traefik) — sens inverse, une règle
+  ufw classique scoped au sous-réseau suffit (voir ci-dessus).
+- Qu'aucun autre service n'utilise déjà le port choisi avant de le changer à
+  nouveau : `sudo ss -tlnp | grep <port>` sur le VPS. C'est exactement ce qui
+  a cassé le premier déploiement (8443 déjà pris par Mailcow) — vérifié par
+  grep sur ce repo mais pas sur l'état réel du VPS avant ce changement.
 - Que le module ZFS se charge correctement sur le noyau du VPS Contabo
   (`install.sh` s'arrête proprement si ce n'est pas le cas, mais je n'ai
   pas pu le tester sur la machine réelle).
@@ -124,7 +138,7 @@ Let's Encrypt (le passthrough ne passe pas par l'ACME de Traefik) et pas de
 formulaire login/mot de passe. Deux étapes, dans l'ordre :
 
 1. **Avertissement certificat.** Incus sert son propre certificat
-   auto-signé sur le port 8443 — le navigateur affiche « connexion non
+   auto-signé sur le port 9443 — le navigateur affiche « connexion non
    privée » / cadenas barré. C'est attendu (comportement par défaut
    d'Incus, pas un bug de cette config) : cliquer sur *Avancé* → *Continuer*
    (Chrome/Edge) ou *Avancé* → *Accepter le risque et poursuivre* (Firefox).
