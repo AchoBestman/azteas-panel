@@ -46,6 +46,7 @@ azteas-panel/
 ├── minio/                    # stockage S3-compatible (partagé)
 ├── plane/                    # gestionnaire de projet (Plane, AIO — utilise les services partagés ci-dessus)
 ├── apanel/                   # provisioning uniquement (app déployée sur Vercel — utilise postgresql/redis à distance via Traefik TCP)
+├── incus/                    # isolation clients (quotas SSD/RAM/CPU) — pas de conteneur Docker, installé sur l'hôte
 └── ...
 ```
 
@@ -111,6 +112,7 @@ Secrets GitHub Actions à définir dans les Settings du dépôt :
 6. **Interfaces admin** → pgAdmin, phpMyAdmin, MongoExpress
 7. **Plane** → gestion de projet (utilise PostgreSQL/Redis/RabbitMQ/Minio partagés — doit être déployé après eux)
 8. **Apanel** (provisioning) → app externe sur Vercel, utilise PostgreSQL/Redis partagés à distance (doit être déployé après eux)
+9. **Incus** → isolation clients (quotas SSD/RAM/CPU), indépendant des autres services — déployable à tout moment après Traefik
 
 ## Stockage
 
@@ -138,3 +140,4 @@ Domaine principal : `azteas.com`
 | `plane.azteas.com` | Plane (gestion de projet) |
 | `pg-tcp.azteas.com` | PostgreSQL — accès externe TCP (pas HTTP), ex: apanel/Vercel |
 | `redis-tcp.azteas.com` | Redis — accès externe TCP TLS (pas HTTP), ex: apanel/Vercel |
+| `cpanel.azteas.com` | Incus — UI admin infrastructure (isolation clients, accès restreint équipe) |

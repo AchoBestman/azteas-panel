@@ -11,6 +11,10 @@ services:
       # dans traefik.yml et les labels traefik.tcp.* des services concernés .
       - "5432:5432"
       - "6380:6380"
+    # Incus tourne sur l'hôte (pas un conteneur, cf. incus/) — nécessaire
+    # pour joindre son API HTTPS en TCP passthrough (traefik/dynamic/incus.yml).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     volumes:

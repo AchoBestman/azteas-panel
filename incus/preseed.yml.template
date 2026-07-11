@@ -1,0 +1,32 @@
+# Preseed d'initialisation Incus (non-interactif) — voir install.sh
+# Substitution ${INCUS_STORAGE_SIZE} faite par sed avant "incus admin init --preseed"
+
+config:
+  core.https_address: 0.0.0.0:8443
+
+storage_pools:
+- name: default
+  driver: zfs
+  config:
+    size: ${INCUS_STORAGE_SIZE}
+
+networks:
+- name: incusbr0
+  type: bridge
+  config:
+    ipv4.address: auto
+    ipv4.nat: "true"
+    ipv6.address: none
+
+profiles:
+- name: default
+  description: "Profil par défaut Incus"
+  devices:
+    root:
+      path: /
+      pool: default
+      type: disk
+    eth0:
+      name: eth0
+      network: incusbr0
+      type: nic

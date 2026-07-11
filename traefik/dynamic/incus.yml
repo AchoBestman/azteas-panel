@@ -1,0 +1,21 @@
+# UI/API admin Incus (isolation clients — quotas SSD/RAM/CPU, voir incus/).
+# TCP passthrough, pas de routeur HTTP classique : Incus utilise
+# l'authentification mutuelle par certificat client, Traefik ne doit pas
+# terminer ce TLS (même principe que postgres/redis-tls dans traefik.yml).
+# Incus tourne sur l'hôte (pas un conteneur Docker) — cible
+# host.docker.internal, résolu via l'extra_hosts du service traefik.
+tcp:
+  routers:
+    incus:
+      rule: "HostSNI(`cpanel.azteas.com`)"
+      entryPoints:
+        - websecure
+      tls:
+        passthrough: true
+      service: incus-svc
+
+  services:
+    incus-svc:
+      loadBalancer:
+        servers:
+          - address: "host.docker.internal:8443"
