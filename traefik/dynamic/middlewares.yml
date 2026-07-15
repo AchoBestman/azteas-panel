@@ -89,6 +89,19 @@ http:
         replacement: "${1}/"
         permanent: false
 
+    # Retire le flux natif "mot de passe oublié" de Mailcow (data/web/reset-password.php —
+    # demande ET confirmation vivent toutes les deux sur cette unique page, cf. son template
+    # reset-password.twig : formulaire "username" -> pw_reset_request, ou formulaire
+    # new_password/new_password2 avec ?token=). On veut que TOUT changement de mot de passe
+    # passe par notre propre système (azteas-admin garde Mailbox.password comme copie
+    # autoritaire) au lieu de Mailcow lui-même — voir aussi redirect-user-to-root ci-dessus,
+    # même logique appliquée à ce second point d'entrée natif.
+    redirect-lostpassword-to-apanel:
+      redirectRegex:
+        regex: "^https?://[^/]+/reset-password\\.php.*"
+        replacement: "https://apanel.azteas.com/mailbox/reset-password"
+        permanent: false
+
     # Plane (god-mode) : son <Router basename="/god-mode/"> (slash final)
     # refuse de matcher l'URL sans slash final et ne rend rien — la page
     # reste bloquée sur le loader statique indéfiniment (bug connu upstream,

@@ -31,6 +31,19 @@ services:
       - traefik.http.routers.mailcow-redirect-user.priority=100
       - traefik.http.routers.mailcow-redirect-user.middlewares=redirect-user-to-root@file
 
+      # Retire le flux natif "mot de passe oublié" de Mailcow (data/web/reset-password.php) au
+      # profit du nôtre (apanel.azteas.com/mailbox/reset-password) : voir
+      # redirect-lostpassword-to-apanel@file dans traefik/dynamic/middlewares.yml pour le détail.
+      # Même priorité que mailcow-redirect-user (tous deux plus spécifiques que la route
+      # générique "mailcow" ci-dessus).
+      - traefik.http.routers.mailcow-redirect-lostpassword.entrypoints=websecure
+      - traefik.http.routers.mailcow-redirect-lostpassword.rule=Host(`mail.azteas.com`) && PathPrefix(`/reset-password.php`)
+      - traefik.http.routers.mailcow-redirect-lostpassword.tls=true
+      - traefik.http.routers.mailcow-redirect-lostpassword.tls.certresolver=letsencrypt
+      - traefik.http.routers.mailcow-redirect-lostpassword.service=mailcow-svc
+      - traefik.http.routers.mailcow-redirect-lostpassword.priority=100
+      - traefik.http.routers.mailcow-redirect-lostpassword.middlewares=redirect-lostpassword-to-apanel@file
+
       # Route autoconfig
       - traefik.http.routers.mailcow-autoconfig.entrypoints=websecure
       - traefik.http.routers.mailcow-autoconfig.rule=Host(`autoconfig.azteas.com`) && Path(`/mail/config-v1.1.xml`)
