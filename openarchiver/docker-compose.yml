@@ -38,7 +38,11 @@ services:
     networks:
       - openarchiver_net
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:7700/health"]
+      # "localhost" résout en IPv6 (::1) en premier dans cette image, alors
+      # que meilisearch n'écoute qu'en IPv4 (0.0.0.0) → "connection refused"
+      # systématique avec "localhost", healthcheck toujours en échec malgré
+      # un serveur parfaitement fonctionnel. IP explicite pour contourner.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7700/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -47,7 +51,10 @@ services:
         reservations:
           memory: 512M
         limits:
-          memory: 512M
+          # 512M était insuffisant : OOMKilled en boucle pendant l'indexation
+          # active (import initial d'une grosse boîte) — le VPS a largement
+          # la marge (23G RAM), pas de raison de sous-dimensionner ici.
+          memory: 2G
 
   tika:
     image: apache/tika:3.2.2.0-full
@@ -60,7 +67,12 @@ services:
         reservations:
           memory: 512M
         limits:
-          memory: 512M
+          # Marge large volontaire (comme meilisearch/open-archiver) : Tika
+          # (parsers PDF/Office + OCR) peut spiker sur une grosse pièce
+          # jointe individuelle. Pas d'OOM observé à 512M à ce jour, mais le
+          # VPS a la marge (23G RAM) — préférable à un OOM en pleine
+          # extraction sur un import volumineux.
+          memory: 2G
 
   # ---- Application ----
 
@@ -132,7 +144,8 @@ services:
         reservations:
           memory: 512M
         limits:
-          memory: 1G
+          # observé à 94% de l'ancienne limite 1G pendant l'indexation — marge insuffisante
+          memory: 2G
     networks:
       - openarchiver_net
       - azteas-net
