@@ -45,6 +45,7 @@ azteas-panel/
 ├── rabbitmq/                 # file de messages (partagée)
 ├── minio/                    # stockage S3-compatible (partagé)
 ├── plane/                    # gestionnaire de projet (Plane, AIO — utilise les services partagés ci-dessus)
+├── openarchiver/             # archivage mail (OpenArchiver — utilise postgresql/redis partagés + Cloudflare R2 externe, en évaluation à côté de piler/)
 ├── apanel/                   # provisioning uniquement (app déployée sur Vercel — utilise postgresql/redis à distance via Traefik TCP)
 ├── incus/                    # isolation clients (quotas SSD/RAM/CPU) — pas de conteneur Docker, installé sur l'hôte
 └── ...
@@ -111,8 +112,9 @@ Secrets GitHub Actions à définir dans les Settings du dépôt :
 5. **Bases de données et services partagés** → MariaDB, PostgreSQL, MongoDB, Redis, RabbitMQ, Minio
 6. **Interfaces admin** → pgAdmin, phpMyAdmin, MongoExpress
 7. **Plane** → gestion de projet (utilise PostgreSQL/Redis/RabbitMQ/Minio partagés — doit être déployé après eux)
-8. **Apanel** (provisioning) → app externe sur Vercel, utilise PostgreSQL/Redis partagés à distance (doit être déployé après eux)
-9. **Incus** → isolation clients (quotas SSD/RAM/CPU), indépendant des autres services — déployable à tout moment après Traefik
+8. **OpenArchiver** → archivage mail (utilise PostgreSQL/Redis partagés — doit être déployé après eux ; stockage des emails sur Cloudflare R2, externe ; en évaluation à côté de Piler)
+9. **Apanel** (provisioning) → app externe sur Vercel, utilise PostgreSQL/Redis partagés à distance (doit être déployé après eux)
+10. **Incus** → isolation clients (quotas SSD/RAM/CPU), indépendant des autres services — déployable à tout moment après Traefik
 
 ## Stockage
 
@@ -138,6 +140,7 @@ Domaine principal : `azteas.com`
 | `minio.azteas.com` | Console Minio (buckets, fichiers, accès restreint) |
 | `s3.azteas.com` | API S3 Minio (accès programmatique) |
 | `plane.azteas.com` | Plane (gestion de projet) |
+| `openarchiver.azteas.com` | OpenArchiver (archivage mail, en évaluation à côté de Piler) |
 | `pg-tcp.azteas.com` | PostgreSQL — accès externe TCP (pas HTTP), ex: apanel/Vercel |
 | `redis-tcp.azteas.com` | Redis — accès externe TCP TLS (pas HTTP), ex: apanel/Vercel |
 | `cpanel.azteas.com` | Incus — UI admin infrastructure (isolation clients, accès restreint équipe) |

@@ -1,0 +1,6 @@
+# Secrets - ne jamais commiter
+.env
+
+# Divers
+.DS_Store
+*.log

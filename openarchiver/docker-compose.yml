@@ -1,0 +1,148 @@
+services:
+
+  # ---- Provisioning (one-shot, idempotent) ----
+  # Crée/met à jour les identifiants dédiés d'OpenArchiver sur postgresql/
+  # (service partagé) puis s'arrête. Tourne à chaque déploiement — sans effet
+  # si les identifiants existent déjà, sauf resynchronisation du mot de
+  # passe. Réutilise l'image du service partagé qu'il provisionne (déjà
+  # présente sur le VPS) plutôt qu'une image dédiée : l'entrypoint est
+  # remplacé par notre script, le serveur embarqué dans l'image ne démarre
+  # jamais.
+
+  openarchiver-db-init:
+    image: pgvector/pgvector:pg17 # même image que postgresql/ → inclut psql/pg_isready
+    container_name: openarchiver-db-init
+    restart: "no"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - OPENARCHIVER_DB_PASSWORD=${OPENARCHIVER_DB_PASSWORD}
+    volumes:
+      - ./init/db-init.sql:/init/db-init.sql:ro
+      - ./init/db-init.sh:/init/db-init.sh:ro
+    networks:
+      - azteas-net
+    entrypoint: ["/bin/sh", "/init/db-init.sh"]
+
+  # ---- Dépendances dédiées (pas d'équivalent partagé dans ce dépôt) ----
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    container_name: openarchiver_meili
+    restart: unless-stopped
+    environment:
+      - MEILI_MASTER_KEY=${OPENARCHIVER_MEILI_MASTER_KEY}
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - openarchiver_meili:/meili_data
+    networks:
+      - openarchiver_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          memory: 512M
+        limits:
+          memory: 512M
+
+  tika:
+    image: apache/tika:3.2.2.0-full
+    container_name: openarchiver_tika
+    restart: unless-stopped
+    networks:
+      - openarchiver_net
+    deploy:
+      resources:
+        reservations:
+          memory: 512M
+        limits:
+          memory: 512M
+
+  # ---- Application ----
+
+  open-archiver:
+    image: logiclabshq/open-archiver:${VERSION:-latest}
+    container_name: openarchiver
+    init: true
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT_FRONTEND=3000
+      - PORT_BACKEND=4000
+      # PostgreSQL : instance partagée (postgresql/), base + role dédiés
+      # créés par openarchiver-db-init ci-dessus.
+      - DATABASE_URL=postgresql://openarchiver:${OPENARCHIVER_DB_PASSWORD}@postgresql:5432/openarchiver
+      # Redis : instance partagée (redis/). Pas de sélection d'index logique
+      # possible côté OpenArchiver (aucune variable REDIS_DB documentée en
+      # amont) — utilise donc l'index 0 (par défaut), inutilisé par les
+      # autres services partagés, voir redis/.env.example pour le registre.
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      # Cloudflare R2 : stockage externe managé, pas de service partagé de ce
+      # dépôt (pas de Minio ici — voir README.md pour le choix R2 vs Minio).
+      # Bucket + token API R2 à créer une fois manuellement dans le
+      # dashboard Cloudflare avant le premier déploiement (voir README.md).
+      # L'endpoint S3 R2 est déjà public par nature (pas de Traefik/DNS à
+      # ajouter pour le stockage, contrairement à Minio) — utilisable tel
+      # quel pour les URLs présignées données au navigateur.
+      - STORAGE_TYPE=s3
+      - STORAGE_S3_ENDPOINT=https://${OPENARCHIVER_R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+      - STORAGE_S3_BUCKET=${OPENARCHIVER_R2_BUCKET:-openarchiver}
+      - STORAGE_S3_ACCESS_KEY_ID=${OPENARCHIVER_R2_ACCESS_KEY_ID}
+      - STORAGE_S3_SECRET_ACCESS_KEY=${OPENARCHIVER_R2_SECRET_ACCESS_KEY}
+      - STORAGE_S3_REGION=auto
+      - STORAGE_S3_FORCE_PATH_STYLE=true
+      # Meilisearch et Tika : dédiés (pas de service partagé équivalent).
+      - MEILI_HOST=http://meilisearch:7700
+      - MEILI_MASTER_KEY=${OPENARCHIVER_MEILI_MASTER_KEY}
+      - TIKA_URL=http://tika:9998
+      - JWT_SECRET=${OPENARCHIVER_JWT_SECRET}
+      - JWT_EXPIRES_IN=7d
+      - ENCRYPTION_KEY=${OPENARCHIVER_ENCRYPTION_KEY}
+      - SYNC_FREQUENCY=${OPENARCHIVER_SYNC_FREQUENCY:-0 0 */2 * * *}
+    depends_on:
+      openarchiver-db-init:
+        condition: service_completed_successfully
+      meilisearch:
+        condition: service_started
+      tika:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=azteas-net
+      - traefik.http.routers.openarchiver.entrypoints=websecure
+      - traefik.http.routers.openarchiver.rule=Host(`${ARCHIVE_HOST}`)
+      - traefik.http.routers.openarchiver.tls=true
+      - traefik.http.routers.openarchiver.tls.certresolver=letsencrypt
+      - traefik.http.routers.openarchiver.middlewares=secure-headers@file,rate-limit@file
+      - traefik.http.services.openarchiver-svc.loadbalancer.server.port=3000
+    deploy:
+      resources:
+        reservations:
+          memory: 512M
+        limits:
+          memory: 1G
+    networks:
+      - openarchiver_net
+      - azteas-net
+
+networks:
+  openarchiver_net:
+    driver: bridge
+  azteas-net:
+    external: true
+    name: azteas-net
+
+volumes:
+  openarchiver_meili: {}
