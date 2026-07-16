@@ -122,7 +122,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=azteas-net
       - traefik.http.routers.openarchiver.entrypoints=websecure
-      - traefik.http.routers.openarchiver.rule=Host(`${ARCHIVE_HOST}`)
+      - traefik.http.routers.openarchiver.rule=Host(`${OPENARCHIVER_HOST}`)
       - traefik.http.routers.openarchiver.tls=true
       - traefik.http.routers.openarchiver.tls.certresolver=letsencrypt
       - traefik.http.routers.openarchiver.middlewares=secure-headers@file,rate-limit@file

@@ -26,7 +26,7 @@ jobs:
           [ -z "${{ secrets.OPENARCHIVER_MEILI_MASTER_KEY }}" ]   && missing+=("secret: OPENARCHIVER_MEILI_MASTER_KEY")
           [ -z "${{ secrets.OPENARCHIVER_JWT_SECRET }}" ]         && missing+=("secret: OPENARCHIVER_JWT_SECRET")
           [ -z "${{ secrets.OPENARCHIVER_ENCRYPTION_KEY }}" ]     && missing+=("secret: OPENARCHIVER_ENCRYPTION_KEY")
-          [ -z "${{ vars.OPENARCHIVER_ARCHIVE_HOST }}" ]          && missing+=("var: OPENARCHIVER_ARCHIVE_HOST")
+          [ -z "${{ vars.OPENARCHIVER_HOST }}" ]          && missing+=("var: OPENARCHIVER_HOST")
           [ -z "${{ vars.OPENARCHIVER_R2_ACCOUNT_ID }}" ]         && missing+=("var: OPENARCHIVER_R2_ACCOUNT_ID")
           [ -z "${{ vars.POSTGRES_USER }}" ]                      && missing+=("var: POSTGRES_USER (partagé postgresql/)")
           [ -z "${{ secrets.POSTGRES_PASSWORD }}" ]               && missing+=("secret: POSTGRES_PASSWORD (partagé postgresql/)")
@@ -48,7 +48,7 @@ jobs:
       - name: Générer le .env OpenArchiver
         run: |
           cat > /tmp/openarchiver.env << 'EOF'
-          ARCHIVE_HOST=${{ vars.OPENARCHIVER_ARCHIVE_HOST }}
+          OPENARCHIVER_HOST=${{ vars.OPENARCHIVER_HOST }}
           VERSION=${{ vars.OPENARCHIVER_VERSION || 'latest' }}
           OPENARCHIVER_DB_PASSWORD=${{ secrets.OPENARCHIVER_DB_PASSWORD }}
           OPENARCHIVER_R2_ACCOUNT_ID=${{ vars.OPENARCHIVER_R2_ACCOUNT_ID }}

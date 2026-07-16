@@ -107,7 +107,7 @@ Secrets GitHub à définir (Settings → Secrets → Actions, environnement `azt
 - `OPENARCHIVER_ENCRYPTION_KEY`
 
 Variables GitHub à définir :
-- `OPENARCHIVER_ARCHIVE_HOST` = `openarchiver.azteas.com`
+- `OPENARCHIVER_HOST` = `openarchiver.azteas.com`
 - `OPENARCHIVER_R2_ACCOUNT_ID` = ID de compte Cloudflare
 - `OPENARCHIVER_R2_BUCKET` (optionnelle, défaut `openarchiver` si absente)
 - `OPENARCHIVER_VERSION` (optionnelle, défaut `latest` si absente)
