@@ -117,6 +117,10 @@ services:
       - JWT_EXPIRES_IN=7d
       - ENCRYPTION_KEY=${OPENARCHIVER_ENCRYPTION_KEY}
       - SYNC_FREQUENCY=${OPENARCHIVER_SYNC_FREQUENCY:-0 0 */2 * * *}
+      # Désactivé par défaut côté OpenArchiver (archivage légal = immuabilité) — activé ici à la
+      # demande explicite d'AIKPE pour permettre la suppression d'ingestions/emails depuis
+      # azteas-admin (voir app/api/archive/ingestions/route.ts côté azteas-admin).
+      - ENABLE_DELETION=true
     depends_on:
       openarchiver-db-init:
         condition: service_completed_successfully
